@@ -1,0 +1,5 @@
+{
+  "name": "Project Neon Quant",
+  "description": "A Gemini-powered agent that designs, modifies, and simulates a story-driven trading game. Users can prompt the agent to create new scenarios, characters, and rules, then immediately playtest them in a simulated environment.",
+  "requestFramePermissions": []
+}
