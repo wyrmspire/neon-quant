@@ -1,5 +1,5 @@
-// Fix: Corrected import path for types.
-import { Episode, AiCharacter, Profile, Strategy, Item, Drill, CoachFeedback, VisualAsset } from '../types';
+// Fix: Corrected import path for types and added AgentLesson.
+import { Episode, AiCharacter, Profile, Strategy, Item, Drill, CoachFeedback, VisualAsset, Theme, JournalEntry, AgentLesson } from '../types';
 
 // Define the structure of our database
 export interface Db {
@@ -11,6 +11,10 @@ export interface Db {
   drills: Drill[];
   coachFeedback: CoachFeedback[];
   visualAssets: VisualAsset[];
+  themes: Theme[];
+  journal: JournalEntry[];
+  // Fix: Added agentLessons to the database schema.
+  agentLessons: AgentLesson[];
 }
 
 // Define the key for localStorage
@@ -100,6 +104,20 @@ const defaultDb: Db = {
     ],
     coachFeedback: [],
     visualAssets: [],
+    themes: [
+        {
+            id: 'theme1',
+            name: 'Cyber-Neon',
+            description: 'The default theme. High-contrast cyan on a dark background.',
+            styles: {
+                button: { classes: 'px-6 py-3 rounded-lg shadow-lg bg-cyan-500 text-gray-900 font-semibold transition-all duration-200 hover:bg-cyan-400 active:scale-95' },
+                card: { classes: 'bg-gray-800/50 p-6 rounded-lg border-2 border-gray-700' },
+            }
+        }
+    ],
+    journal: [],
+    // Fix: Added agentLessons to the default database object.
+    agentLessons: [],
 };
 
 // Function to load the DB from localStorage, falling back to default if it doesn't exist or is invalid

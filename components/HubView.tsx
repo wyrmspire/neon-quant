@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-// Fix: Corrected import path for types.
-import { GameScreen, Profile } from '../types';
-import { mockApi } from '../services/mockApi';
+import React from 'react';
+import { GameScreen } from '../types';
 import { LoadingIcon, StoreIcon, ContactsIcon, GamepadIcon, DojoIcon, PlaybookIcon } from './Icons';
+import { useData } from '../context/DataContext';
 
 interface HubViewProps {
     onNavigate: (screen: GameScreen) => void;
@@ -24,17 +23,9 @@ const NavCard: React.FC<{ title: string; description: string; icon: React.ReactN
 );
 
 export const HubView: React.FC<HubViewProps> = ({ onNavigate }) => {
-    const [profile, setProfile] = useState<Profile | null>(null);
+    const { profile, isLoading } = useData();
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            const data = await mockApi.getProfile();
-            setProfile(data);
-        };
-        fetchProfile();
-    }, []);
-
-    if (!profile) {
+    if (isLoading || !profile) {
         return <div className="flex items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Loading Profile...</span></div>;
     }
 

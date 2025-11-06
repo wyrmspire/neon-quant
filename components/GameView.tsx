@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-// Fix: Corrected import path for types.
 import { GameScreen, Episode, Session, CoachFeedback } from '../types';
 import { HubView } from './HubView';
 import { EpisodeSelectScreen } from './EpisodeSelectScreen';
-import { TradingArena } from './TradingArena';
+import { TradingArena } from './trading/TradingArena';
 import { MarketScreen } from './MarketScreen';
 import { ContactsScreen } from './ContactsScreen';
 import { DojoScreen } from './DojoScreen';
@@ -12,13 +11,19 @@ import { StrategyPlaybookScreen } from './StrategyPlaybookScreen';
 import { mockApi } from '../services/mockApi';
 import { geminiService } from '../services/geminiService';
 import { LoadingIcon } from './Icons';
+import { useData } from '../context/DataContext';
 
-export const GameView: React.FC = () => {
-    const [screen, setScreen] = useState<GameScreen>('hub');
+interface GameViewProps {
+    screen: GameScreen;
+    setScreen: (screen: GameScreen) => void;
+}
+
+export const GameView: React.FC<GameViewProps> = ({ screen, setScreen }) => {
     const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
     const [lastSession, setLastSession] = useState<Session | null>(null);
     const [lastFeedback, setLastFeedback] = useState<CoachFeedback | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const { grantEpisodeReward } = useData();
 
     const handleEpisodeSelect = (episode: Episode) => {
         setSelectedEpisode(episode);
@@ -26,21 +31,28 @@ export const GameView: React.FC = () => {
     };
 
     const handleEpisodeComplete = async (session: Session) => {
+        if (!selectedEpisode) return;
+
         setIsLoading(true);
         setLastSession(session);
         
-        // 1. Generate feedback from AI Coach
-        const feedbackData = await geminiService.generateCoachFeedback(session, selectedEpisode!);
-        const savedFeedback = await mockApi.saveCoachFeedback(feedbackData);
-        setLastFeedback(savedFeedback);
-        
-        // 2. Grant reward
-        await mockApi.grantEpisodeReward(selectedEpisode!.reward);
-        
-        // 3. Navigate to debrief
-        setSelectedEpisode(null);
-        setIsLoading(false);
-        setScreen('debrief');
+        try {
+            // 1. Generate feedback from AI Coach
+            const feedbackData = await geminiService.generateCoachFeedback(session, selectedEpisode);
+            const savedFeedback = await mockApi.saveCoachFeedback(feedbackData);
+            setLastFeedback(savedFeedback);
+            
+            // 2. Grant reward via context
+            await grantEpisodeReward(selectedEpisode.reward);
+        } catch (error) {
+            console.error("Failed during episode completion:", error);
+            // Handle error state if necessary
+        } finally {
+            // 3. Navigate to debrief
+            setSelectedEpisode(null);
+            setIsLoading(false);
+            setScreen('debrief');
+        }
     };
 
     const renderScreen = () => {
@@ -59,8 +71,7 @@ export const GameView: React.FC = () => {
                 if (selectedEpisode) {
                     return <TradingArena episode={selectedEpisode} onComplete={handleEpisodeComplete} />;
                 }
-                // Fallback if no episode is selected
-                setScreen('hub');
+                setScreen('hub'); // Fallback if no episode is selected
                 return null;
             case 'market':
                 return <MarketScreen onNavigate={setScreen} />;
@@ -72,12 +83,12 @@ export const GameView: React.FC = () => {
                 if(lastSession && lastFeedback) {
                      return <DebriefScreen session={lastSession} feedback={lastFeedback} onAcknowledge={() => setScreen('hub')} />;
                 }
-                 setScreen('hub');
+                 setScreen('hub'); // Fallback if debrief data is missing
                  return null;
             default:
                 return <HubView onNavigate={setScreen} />;
         }
     };
 
-    return <div className="h-full">{renderScreen()}</div>;
+    return <div className="h-full view-container">{renderScreen()}</div>;
 };

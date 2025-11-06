@@ -1,26 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { GameScreen, Strategy } from '../types';
-import { mockApi } from '../services/mockApi';
 import { ArrowLeftIcon, LoadingIcon } from './Icons';
+import { RegimeTag } from './ui/RegimeTag';
+import { useData } from '../context/DataContext';
 
 interface StrategyPlaybookScreenProps {
     onNavigate: (screen: GameScreen) => void;
 }
-
-const RegimeTag: React.FC<{ regime: Strategy['regime'] }> = ({ regime }) => {
-    const regimeStyles: Record<Strategy['regime'], string> = {
-        news: 'bg-red-500/20 text-red-300 border-red-500/30',
-        range: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-        trend: 'bg-green-500/20 text-green-300 border-green-500/30',
-        volcrush: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-    };
-    return (
-        <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${regimeStyles[regime]}`}>
-            {regime.toUpperCase()}
-        </span>
-    );
-};
 
 const RulesSection: React.FC<{ title: string; rules: string[]; color: string }> = ({ title, rules, color }) => (
     <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
@@ -38,24 +24,16 @@ const RulesSection: React.FC<{ title: string; rules: string[]; color: string }> 
 
 
 export const StrategyPlaybookScreen: React.FC<StrategyPlaybookScreenProps> = ({ onNavigate }) => {
-    const [strategies, setStrategies] = useState<Strategy[]>([]);
+    const { strategies, isLoading } = useData();
     const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchStrategies = async () => {
-            setLoading(true);
-            const data = await mockApi.getStrategies();
-            setStrategies(data);
-            if (data.length > 0) {
-                setSelectedStrategy(data[0]);
-            }
-            setLoading(false);
-        };
-        fetchStrategies();
-    }, []);
+        if (!isLoading && strategies.length > 0 && !selectedStrategy) {
+            setSelectedStrategy(strategies[0]);
+        }
+    }, [isLoading, strategies, selectedStrategy]);
 
-    if (loading) {
+    if (isLoading) {
         return <div className="flex items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Loading Strategies...</span></div>;
     }
 
@@ -107,7 +85,6 @@ export const StrategyPlaybookScreen: React.FC<StrategyPlaybookScreenProps> = ({ 
                             <div className="space-y-4">
                                <RulesSection title="Entry Conditions" rules={selectedStrategy.entryConditions} color="text-green-400" />
                                <RulesSection title="Exit Conditions" rules={selectedStrategy.exitConditions} color="text-red-400" />
-                               {/* FIX: Corrected variable name from `selected` to `selectedStrategy`. */}
                                <RulesSection title="Risk Management" rules={selectedStrategy.riskManagement} color="text-yellow-400" />
                             </div>
                         </div>

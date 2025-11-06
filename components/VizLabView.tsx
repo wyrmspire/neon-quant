@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AvatarStudio } from './AvatarStudio';
 import { VizLabTool } from '../types';
-import { GradientIcon, AnimationIcon, TextStreamIcon, FadeIcon, PulseIcon, CharacterIcon } from './Icons';
+import { GradientIcon, AnimationIcon, TextStreamIcon, FadeIcon, PulseIcon, CharacterIcon, StylerIcon } from './Icons';
 import { GradientDepthSample } from './vizlab/GradientDepthSample';
 import { PopAnimationSample } from './vizlab/PopAnimationSample';
 import { StreamingTextSample } from './vizlab/StreamingTextSample';
 import { FadeEffectsSample } from './vizlab/FadeEffectsSample';
 import { PulsingLightsSample } from './vizlab/PulsingLightsSample';
+import { ThemeStudioSample } from './vizlab/ThemeStudioSample';
+
+interface VizLabViewProps {
+    tool: VizLabTool;
+    setTool: (tool: VizLabTool) => void;
+}
 
 const NavButton: React.FC<{
     label: string;
@@ -31,6 +37,7 @@ const NavButton: React.FC<{
 
 const toolConfig = {
     avatarStudio: { label: 'Avatar Studio', icon: <CharacterIcon />, component: <AvatarStudio /> },
+    themeStudio: { label: 'Theme Studio', icon: <StylerIcon />, component: <ThemeStudioSample /> },
     gradientDepth: { label: 'Gradient Depth', icon: <GradientIcon />, component: <GradientDepthSample /> },
     popAnimation: { label: 'Pop Animations', icon: <AnimationIcon />, component: <PopAnimationSample /> },
     streamingText: { label: 'Streaming Text', icon: <TextStreamIcon />, component: <StreamingTextSample /> },
@@ -38,15 +45,13 @@ const toolConfig = {
     pulsingLights: { label: 'Pulsing Lights', icon: <PulseIcon />, component: <PulsingLightsSample /> },
 };
 
-export const VizLabView: React.FC = () => {
-    const [activeTool, setActiveTool] = useState<VizLabTool>('avatarStudio');
-
+export const VizLabView: React.FC<VizLabViewProps> = ({ tool, setTool }) => {
     const renderTool = () => {
-        return toolConfig[activeTool].component;
+        return toolConfig[tool].component;
     };
 
     return (
-        <div className="flex h-full max-h-[calc(100vh-65px)]">
+        <div className="view-container flex h-full max-h-[calc(100vh-65px)]">
             <aside className="w-64 bg-gray-800/50 border-r border-gray-700 p-4 flex-shrink-0">
                 <h2 className="text-lg font-bold text-white mb-4 px-2">VizLab Tools</h2>
                 <nav className="space-y-2">
@@ -55,8 +60,8 @@ export const VizLabView: React.FC = () => {
                             key={key}
                             label={label}
                             icon={icon}
-                            isActive={activeTool === key}
-                            onClick={() => setActiveTool(key as VizLabTool)}
+                            isActive={tool === key}
+                            onClick={() => setTool(key as VizLabTool)}
                         />
                     ))}
                 </nav>

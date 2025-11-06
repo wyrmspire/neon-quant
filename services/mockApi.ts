@@ -1,5 +1,5 @@
-// Fix: Corrected import path for types.
-import { Episode, AiCharacter, Profile, Strategy, Item, Drill, CoachFeedback, VisualAsset } from '../types';
+// Fix: Corrected import path for types and added AgentLesson.
+import { Episode, AiCharacter, Profile, Strategy, Item, Drill, CoachFeedback, VisualAsset, Theme, AgentLesson } from '../types';
 import { mockDb } from './mockDb';
 
 class MockApiService {
@@ -64,8 +64,6 @@ class MockApiService {
         const db = mockDb.read();
         return Promise.resolve(JSON.parse(JSON.stringify(db.strategies)));
     }
-
-
 
     async createStrategy(strategy: Omit<Strategy, 'id'>): Promise<Strategy> {
         const newStrategy: Strategy = {
@@ -155,6 +153,40 @@ class MockApiService {
             db.visualAssets.push(newAsset);
         });
         return Promise.resolve(newAsset);
+    }
+
+    async getThemes(): Promise<Theme[]> {
+        const db = mockDb.read();
+        return Promise.resolve(JSON.parse(JSON.stringify(db.themes)));
+    }
+
+    async createTheme(theme: Omit<Theme, 'id'>): Promise<Theme> {
+        const newTheme: Theme = {
+            ...theme,
+            id: `theme${Date.now()}`
+        };
+        mockDb.write(db => {
+            db.themes.push(newTheme);
+        });
+        return Promise.resolve(newTheme);
+    }
+
+    // Fix: Added missing getAgentLessons method.
+    async getAgentLessons(): Promise<AgentLesson[]> {
+        const db = mockDb.read();
+        return Promise.resolve(JSON.parse(JSON.stringify(db.agentLessons)));
+    }
+
+    // Fix: Added missing createAgentLesson method.
+    async createAgentLesson(lesson: Omit<AgentLesson, 'id'>): Promise<AgentLesson> {
+        const newLesson: AgentLesson = {
+            ...lesson,
+            id: `lesson${Date.now()}`
+        };
+        mockDb.write(db => {
+            db.agentLessons.push(newLesson);
+        });
+        return Promise.resolve(newLesson);
     }
 }
 

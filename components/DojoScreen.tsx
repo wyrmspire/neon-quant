@@ -1,29 +1,16 @@
-
-import React, { useState, useEffect } from 'react';
-// Fix: Corrected import paths for types and services.
-import { GameScreen, Drill } from '../types';
-import { mockApi } from '../services/mockApi';
+import React from 'react';
+import { GameScreen } from '../types';
 import { ArrowLeftIcon, LoadingIcon } from './Icons';
+import { useData } from '../context/DataContext';
 
 interface DojoScreenProps {
     onNavigate: (screen: GameScreen) => void;
 }
 
 export const DojoScreen: React.FC<DojoScreenProps> = ({ onNavigate }) => {
-    const [drills, setDrills] = useState<Drill[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { drills, isLoading } = useData();
 
-    useEffect(() => {
-        const fetchDrills = async () => {
-            setLoading(true);
-            const data = await mockApi.getDrills();
-            setDrills(data);
-            setLoading(false);
-        };
-        fetchDrills();
-    }, []);
-
-    if (loading) {
+    if (isLoading) {
         return <div className="flex items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Loading Drills...</span></div>;
     }
 

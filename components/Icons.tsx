@@ -1,163 +1,224 @@
 import React from 'react';
 
-export const AgentIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+interface IconProps {
+    size?: number;
+    className?: string;
+}
+
+const createIcon = (path: React.ReactNode): React.FC<IconProps> => {
+    return ({ size = 6, className = '' }) => (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`w-${size} h-${size} ${className}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            {path}
+        </svg>
+    );
+};
+
+export const SendIcon = createIcon(
+    <path d="M22 2L11 13L2 9L22 2zM13 22L11 13" />
+);
+
+export const LoadingIcon: React.FC<IconProps> = ({ size = 6, className = '' }) => (
+    <svg className={`animate-spin w-${size} h-${size} ${className}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M4.93 4.93L7.76 7.76" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M16.24 16.24L19.07 19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M2 12H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M18 12H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M4.93 19.07L7.76 16.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M16.24 7.76L19.07 4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
 
-export const GamepadIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5a2 2 0 112.828-2.828L11 11.172l3.172-3.172a2 2 0 112.828 2.828l-5 5a2 2 0 01-2.828 0zM4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m6 0a2 2 0 100-4 2 2 0 000 4z" />
-    </svg>
+export const SystemIcon = createIcon(
+    <>
+        <rect x="3" y="4" width="18" height="16" rx="2" ry="2" />
+        <line x1="7" y1="8" x2="17" y2="8" />
+        <line x1="7" y1="12" x2="17" y2="12" />
+        <line x1="7" y1="16" x2="12" y2="16" />
+    </>
 );
 
-export const SendIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-    </svg>
+export const UserIcon = createIcon(
+    <>
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+    </>
 );
 
-export const LoadingIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg className={`animate-spin h-${size} w-${size} text-white`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
+export const AgentIcon = createIcon(
+    <>
+        <path d="M12 8V4H8" />
+        <rect x="4" y="12" width="16" height="8" rx="2" />
+        <path d="M12 12v-2a2 2 0 0 1 2-2h4v2" />
+        <path d="M4 14.5L6.5 17 9 14.5" />
+    </>
 );
 
-export const SystemIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-    </svg>
+export const ErrorIcon = createIcon(
+    <>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+    </>
 );
 
-export const UserIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
+export const ImageIcon = createIcon(
+    <>
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21 15 16 10 5 21" />
+    </>
 );
 
-export const ErrorIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
+export const VizLabIcon = createIcon(
+    <>
+        <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.88l-8.57 8.57A2 2 0 1 1 7 15" />
+    </>
 );
 
-export const ArrowLeftIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-    </svg>
+export const StoreIcon = createIcon(
+    <>
+        <path d="M18 6H6a4 4 0 0 0-4 4v4a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4v-4a4 4 0 0 0-4-4Z" />
+        <path d="M14 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+    </>
 );
 
-export const CheckCircleIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size} text-green-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
+export const ContactsIcon = createIcon(
+    <>
+        <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2" />
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <circle cx="12" cy="10" r="2" />
+        <line x1="8" y1="2" x2="8" y2="4" />
+        <line x1="16" y1="2" x2="16" y2="4" />
+    </>
 );
 
-export const XCircleIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size} text-red-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
+export const GamepadIcon = createIcon(
+    <>
+        <path d="M6 12h4m-2 2v-4" />
+        <path d="m16.5 10.5-3-3-3 3" />
+        <path d="M10 18a8 8 0 1 0-8-8 8 8 0 0 0 8 8Z" />
+    </>
 );
 
-export const InfoIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size} text-cyan-400 flex-shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
+export const DojoIcon = createIcon(
+    <>
+        <path d="M4 20h16" />
+        <path d="M4 10h16" />
+        <path d="M10 4v16" />
+        <path d="M14 4v16" />
+        <path d="M4 4h2" />
+        <path d="M4 8h2" />
+        <path d="M4 12h2" />
+        <path d="M4 16h2" />
+        <path d="M18 4h2" />
+        <path d="M18 8h2" />
+        <path d="M18 12h2" />
+        <path d="M18 16h2" />
+    </>
 );
 
-export const HubIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
+export const PlaybookIcon = createIcon(
+    <>
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </>
 );
 
-export const StoreIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
+export const ArrowLeftIcon = createIcon(
+    <>
+        <line x1="19" y1="12" x2="5" y2="12" />
+        <polyline points="12 19 5 12 12 5" />
+    </>
 );
 
-export const ContactsIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 21a6 6 0 006-6v-1a3 3 0 00-3-3H9a3 3 0 00-3 3v1a6 6 0 006 6z" />
-    </svg>
+export const CheckCircleIcon = createIcon(
+    <>
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+    </>
 );
 
-export const CharacterIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-    </svg>
+export const InfoIcon = createIcon(
+    <>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12.01" y2="8" />
+    </>
 );
 
-export const ItemIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-    </svg>
+export const XCircleIcon = createIcon(
+    <>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="15" y1="9" x2="9" y2="15" />
+        <line x1="9" y1="9" x2="15" y2="15" />
+    </>
 );
 
-export const DojoIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 11L7 7m4 4l-4 4m4-4l4-4m-4 4l4 4" />
-    </svg>
+export const GradientIcon = createIcon(
+    <path d="M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0M2 12h20" />
 );
 
-export const PlaybookIcon: React.FC<{ size?: number }> = ({ size = 6 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-    </svg>
+export const AnimationIcon = createIcon(
+    <>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="M12 5.5V11" />
+        <path d="m15 8-3 3-3-3" />
+    </>
 );
 
-export const VizLabIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-    </svg>
+export const TextStreamIcon = createIcon(
+    <>
+        <path d="M4 7V5h16v2" />
+        <path d="M10 5v14" />
+        <path d="M7 19h6" />
+    </>
 );
 
-export const ImageIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-    </svg>
+export const FadeIcon = createIcon(
+    <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 12A10 10 0 0 0 12 2v10Z" />
+    </>
 );
 
-export const GradientIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <defs>
-            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style={{stopColor:'currentColor', stopOpacity:1}} />
-            <stop offset="100%" style={{stopColor:'currentColor', stopOpacity:0.2}} />
-            </linearGradient>
-        </defs>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z" fill="url(#grad1)" />
-    </svg>
+export const PulseIcon = createIcon(
+    <>
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </>
 );
 
-export const AnimationIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
+export const CharacterIcon = createIcon( // Same as UserIcon
+    <>
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+    </>
 );
 
-export const TextStreamIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-    </svg>
+export const StylerIcon = createIcon(
+    <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a7 7 0 1 0 10 10" />
+    </>
 );
 
-export const FadeIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428A10 10 0 1112 2a10 10 0 017.428 13.428z" strokeOpacity="0.3" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.464 14.464A7 7 0 1112 5a7 7 0 011.464 9.464z" strokeOpacity="0.6" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12a4 4 0 110-8 4 4 0 010 8z" />
-    </svg>
+export const TestTubeIcon = createIcon(
+    <>
+        <path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5h-1c-1.4 0-2.5-1.1-2.5-2.5V2" />
+        <path d="M8.5 2h7" />
+        <path d="M14.5 16h-5" />
+    </>
 );
 
-export const PulseIcon: React.FC<{ size?: number }> = ({ size = 5 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-${size} w-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 4.5s2.5-1.5 4.5-1.5S21 4.5 21 6.5s-1.5 4-4.5 4.5S12 13 12 13s-2.5 1.5-4.5 1.5S3 11 3 9s1.5-4.5 4.5-4.5S12 4.5 12 4.5z" opacity="0.4" />
-    </svg>
-);
+// This is used as AgentAvatarIcon
+export const AgentAvatarIcon = AgentIcon;

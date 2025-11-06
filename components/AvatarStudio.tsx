@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { VisualAsset } from '../types';
 import { geminiService } from '../services/geminiService';
 import { mockApi } from '../services/mockApi';
 import { LoadingIcon } from './Icons';
+import { useData } from '../context/DataContext';
 
 export const AvatarStudio: React.FC = () => {
     const [prompt, setPrompt] = useState('');
@@ -10,16 +11,9 @@ export const AvatarStudio: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [generatedImage, setGeneratedImage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [gallery, setGallery] = useState<VisualAsset[]>([]);
-    
-    const fetchGallery = async () => {
-        const assets = await mockApi.getVisualAssets('avatar');
-        setGallery(assets);
-    };
 
-    useEffect(() => {
-        fetchGallery();
-    }, []);
+    const { visualAssets, addCreatedItem } = useData();
+    const gallery = visualAssets.filter(asset => asset.type === 'avatar');
 
     const handleGenerate = async () => {
         if (!prompt.trim() || isLoading) return;
@@ -40,17 +34,17 @@ export const AvatarStudio: React.FC = () => {
     
     const handleSave = async () => {
         if (!generatedImage || !assetName.trim()) return;
-        const newAsset: Omit<VisualAsset, 'id'> = {
+        const newAssetData: Omit<VisualAsset, 'id'> = {
             type: 'avatar',
             name: assetName.trim(),
             prompt: prompt,
             dataUrl: generatedImage,
         };
-        await mockApi.createVisualAsset(newAsset);
+        const savedAsset = await mockApi.createVisualAsset(newAssetData);
+        addCreatedItem(savedAsset, 'visualAsset'); // Update context
         setGeneratedImage(null);
         setPrompt('');
         setAssetName('');
-        fetchGallery(); // Refresh the gallery
     };
 
     return (

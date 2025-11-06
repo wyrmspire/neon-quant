@@ -1,10 +1,8 @@
-// Fix: Corrected import path for zod.
-import { z } from 'zod';
 export type AppMode = 'agent' | 'game' | 'vizlab';
 
 export type GameScreen = 'hub' | 'episodeSelect' | 'market' | 'contacts' | 'trading' | 'dojo' | 'debrief' | 'strategybook';
 
-export type VizLabTool = 'avatarStudio' | 'gradientDepth' | 'popAnimation' | 'streamingText' | 'fadeEffects' | 'pulsingLights';
+export type VizLabTool = 'avatarStudio' | 'gradientDepth' | 'popAnimation' | 'streamingText' | 'fadeEffects' | 'pulsingLights' | 'themeStudio';
 
 export type Regime = "trend" | "range" | "news" | "volcrush";
 
@@ -24,6 +22,7 @@ export interface Episode {
     characterBeats: CharacterBeat[];
     imageUrl: string;
     reward: number;
+    suggestedThemeId?: string;
 }
 
 export interface AiCharacter {
@@ -32,6 +31,7 @@ export interface AiCharacter {
     personality: string;
     imageUrl: string;
     bio: string;
+    suggestedThemeId?: string;
 }
 
 export interface Profile {
@@ -54,6 +54,7 @@ export interface Strategy {
     entryConditions: string[];
     exitConditions: string[];
     riskManagement: string[];
+    suggestedThemeId?: string;
 }
 
 export interface Item {
@@ -62,6 +63,7 @@ export interface Item {
     description: string;
     price: number;
     type: 'cosmetic' | 'tool';
+    suggestedThemeId?: string;
 }
 
 export interface SuccessCriteria {
@@ -78,6 +80,7 @@ export interface Drill {
     detectionRule: string;
     scenarioSeed: string;
     successCriteria: SuccessCriteria;
+    suggestedThemeId?: string;
 }
 
 export interface AgentLog {
@@ -120,3 +123,63 @@ export interface VisualAsset {
     prompt: string;
     dataUrl: string; // base64 data URL
 }
+
+export interface ComponentStyle {
+    classes: string;
+}
+
+export interface Theme {
+    id: string;
+    name: string;
+    description: string;
+    styles: {
+        button: ComponentStyle,
+        card: ComponentStyle,
+    }
+}
+
+export interface JournalEntry {
+    id: string;
+    drillId: string;
+    timestamp: string;
+    pnl: number;
+    score: number;
+    notes: string;
+    ruleHits: Record<string, number>;
+}
+
+export interface AgentLesson {
+    id: string;
+    context: string;
+    correction: string;
+}
+
+// Data Context Types
+export interface AppData {
+    profile: Profile | null;
+    episodes: Episode[];
+    characters: AiCharacter[];
+    strategies: Strategy[];
+    items: Item[];
+    drills: Drill[];
+    visualAssets: VisualAsset[];
+    themes: Theme[];
+    agentLessons: AgentLesson[];
+}
+
+export type AssetType = Episode | Strategy | AiCharacter | Item | Drill | VisualAsset;
+
+export interface DataContextType extends AppData {
+    isLoading: boolean;
+    fetchData: () => Promise<void>;
+    purchaseItem: (itemId: string) => Promise<{success: boolean}>;
+    grantEpisodeReward: (reward: number) => Promise<void>;
+    addCreatedItem: <T extends AssetType>(item: T, type: CreationType) => void;
+}
+
+// Dev Tools
+export type AppStateSetters = {
+    setMode: (mode: AppMode) => void;
+    setGameScreen: (screen: GameScreen) => void;
+    setVizLabTool: (tool: VizLabTool) => void;
+};

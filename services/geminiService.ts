@@ -1,13 +1,18 @@
-
-
 import { GoogleGenAI, Type } from "@google/genai";
-// Fix: Corrected import path for types.
-import { Episode, Strategy, AiCharacter, Item, AgentLog, Drill, Session, CoachFeedback } from '../types';
+import { Episode, Strategy, AiCharacter, Item, AgentLog, Drill, Session, CoachFeedback, Theme, AgentLesson } from '../types';
 
-// FIX: Adhering to the API key initialization guideline.
-// The API key is sourced directly from the environment variable `process.env.API_KEY`.
-// It is assumed to be pre-configured and available in the execution environment.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+// =================================================================
+// CONTENT SCHEMAS
+// These schemas define the expected JSON structure for each type of
+// content the AI can generate. This ensures type safety and
+// predictable outputs from the Gemini API.
+// =================================================================
+
+const suggestedThemeProperty = {
+    suggestedThemeId: { type: Type.STRING, description: 'Optional. Suggest a theme ID from the available list that best fits the mood of this content.' },
+};
 
 const episodeSchema = {
     type: Type.OBJECT,
@@ -33,7 +38,8 @@ const episodeSchema = {
                 required: ['t', 'characterId', 'dialogue']
             },
             description: 'Narrative moments that happen during the episode.'
-        }
+        },
+        ...suggestedThemeProperty,
     },
     required: ['title', 'description', 'regime', 'seed', 'objectives', 'characterBeats']
 };
@@ -58,7 +64,8 @@ const strategySchema = {
             type: Type.ARRAY,
             items: { type: Type.STRING },
             description: 'A list of 1-2 rules about position sizing, stop-loss placement, or other risk controls.'
-        }
+        },
+        ...suggestedThemeProperty,
     },
     required: ['name', 'description', 'regime', 'entryConditions', 'exitConditions', 'riskManagement']
 };
@@ -69,7 +76,8 @@ const characterSchema = {
         name: { type: Type.STRING, description: 'A unique and fitting name for the character.' },
         personality: { type: Type.STRING, description: 'A concise description of the character\'s core personality traits and motivations.' },
         bio: { type: Type.STRING, description: 'A short backstory or biography for the character, explaining their role in the world of Neon Quant.' },
-        imagePrompt: { type: Type.STRING, description: 'A descriptive prompt for an AI image generator to create a portrait. E.g., "A grizzled veteran trader with a cybernetic eye, looking over a holographic stock chart."' }
+        imagePrompt: { type: Type.STRING, description: 'A descriptive prompt for an AI image generator to create a portrait. E.g., "A grizzled veteran trader with a cybernetic eye, looking over a holographic stock chart."' },
+        ...suggestedThemeProperty,
     },
     required: ['name', 'personality', 'bio', 'imagePrompt']
 };
@@ -80,7 +88,8 @@ const itemSchema = {
         name: { type: Type.STRING, description: 'The name of the item.' },
         description: { type: Type.STRING, description: 'A brief, flavorful description of the item and its purpose.' },
         price: { type: Type.INTEGER, description: 'The cost of the item in "Cred", the in-game currency. Should be a reasonable number, e.g., between 100 and 5000.' },
-        type: { type: Type.STRING, enum: ["cosmetic", "tool"], description: 'The category of the item.' }
+        type: { type: Type.STRING, enum: ["cosmetic", "tool"], description: 'The category of the item.' },
+        ...suggestedThemeProperty,
     },
     required: ['name', 'description', 'price', 'type']
 };
@@ -101,7 +110,8 @@ const drillSchema = {
                 label: { type: Type.STRING, description: 'A human-readable string describing the success condition, e.g., "Hold trade for > 60s".' }
             },
             required: ['metric', 'op', 'value', 'label']
-        }
+        },
+        ...suggestedThemeProperty,
     },
     required: ['name', 'description', 'detectionRule', 'scenarioSeed', 'successCriteria']
 };
@@ -138,16 +148,54 @@ const visualAssetSchema = {
 };
 
 
+// =================================================================
+// CONTEXT INJECTORS (RAG)
+// These functions format available themes and learned lessons into a
+// string that can be injected into the AI's prompt. This allows the
+// agent to be "aware" of its environment and past mistakes.
+// =================================================================
+
+const getThemeContext = (themes: Theme[]) => {
+    if (!themes || themes.length === 0) return '';
+    const themeList = themes.map(t => `- ID: "${t.id}", Name: "${t.name}", Description: "${t.description}"`).join('\n');
+    return `
+---
+AVAILABLE VISUAL THEMES:
+Here is a list of available visual themes you can suggest for the content you are creating. Use the theme's ID.
+${themeList}
+---
+`;
+};
+
+const getKnowledgeBaseContext = (lessons: AgentLesson[]) => {
+    if (!lessons || lessons.length === 0) return '';
+    const lessonList = lessons.map(l => `- CONTEXT: ${l.context}\n- CORRECTION: ${l.correction}`).join('\n\n');
+    return `
+---
+AGENT KNOWLEDGE BASE:
+Based on past errors, you must adhere to the following learned lessons. These are critical corrections to your behavior.
+${lessonList}
+---
+`;
+};
+
+// =================================================================
+// GEMINI SERVICE CLASS
+// The main service that orchestrates all calls to the Gemini API
+// for content generation, image creation, chat, and self-correction.
+// =================================================================
+
 class GeminiService {
-    async generateScenario(prompt: string): Promise<Omit<Episode, 'id' | 'imageUrl' | 'reward'>> {
+    async generateScenario(prompt: string, themes: Theme[], agentLessons: AgentLesson[]): Promise<Omit<Episode, 'id' | 'imageUrl' | 'reward'>> {
         try {
             const result = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: `You are a creative game designer for a trading simulation game called 'Project Neon Quant'. Your task is to generate a complete game scenario based on the user's request. The scenario must be a valid JSON object matching the provided schema.
-
+${getThemeContext(themes)}
+${getKnowledgeBaseContext(agentLessons)}
 User Request: "${prompt}"
 
-Generate a scenario that fits this request. Ensure the objectives are challenging but fair, and the character beats add to the story and tension.`,
+Generate a scenario that fits this request. Ensure the objectives are challenging but fair, and the character beats add to the story and tension. If a theme fits, suggest it.`,
                 config: {
                     responseMimeType: 'application/json',
                     responseSchema: episodeSchema,
@@ -186,12 +234,13 @@ Generate a scenario that fits this request. Ensure the objectives are challengin
         }
     }
 
-    async generateStrategy(prompt: string): Promise<Omit<Strategy, 'id'>> {
+    async generateStrategy(prompt: string, themes: Theme[], agentLessons: AgentLesson[]): Promise<Omit<Strategy, 'id'>> {
         try {
             const result = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: `You are an expert trading coach and game designer for 'Project Neon Quant'. Your task is to generate a complete trading strategy based on the user's request. The strategy must be a valid JSON object matching the provided schema. The rules should be clear, concise, and actionable for a player.
-
+${getThemeContext(themes)}
+${getKnowledgeBaseContext(agentLessons)}
 User Request: "${prompt}"
 
 Generate a strategy that fits this request.`,
@@ -210,12 +259,13 @@ Generate a strategy that fits this request.`,
         }
     }
 
-    async generateCharacter(prompt: string): Promise<Omit<AiCharacter, 'id' | 'imageUrl'> & { imagePrompt: string }> {
+    async generateCharacter(prompt: string, themes: Theme[], agentLessons: AgentLesson[]): Promise<Omit<AiCharacter, 'id' | 'imageUrl'> & { imagePrompt: string }> {
         try {
             const result = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: `You are a creative character designer for a trading simulation game called 'Project Neon Quant'. Your task is to generate a complete character profile based on the user's request. The profile must be a valid JSON object matching the provided schema.
-
+${getThemeContext(themes)}
+${getKnowledgeBaseContext(agentLessons)}
 User Request: "${prompt}"
 
 Generate a character that fits this request. Ensure the personality and bio are compelling and fit the neon-cyberpunk trading world.`,
@@ -232,12 +282,13 @@ Generate a character that fits this request. Ensure the personality and bio are 
         }
     }
 
-    async generateItem(prompt: string): Promise<Omit<Item, 'id'>> {
+    async generateItem(prompt: string, themes: Theme[], agentLessons: AgentLesson[]): Promise<Omit<Item, 'id'>> {
         try {
             const result = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: `You are a game designer for 'Project Neon Quant'. Your task is to generate a complete in-game item based on the user's request. The item must be a valid JSON object matching the provided schema.
-
+${getThemeContext(themes)}
+${getKnowledgeBaseContext(agentLessons)}
 User Request: "${prompt}"
 
 Generate an item that fits this request. Ensure the price is balanced for the game's economy.`,
@@ -254,12 +305,13 @@ Generate an item that fits this request. Ensure the price is balanced for the ga
         }
     }
 
-    async generateDrill(prompt: string): Promise<Omit<Drill, 'id'>> {
+    async generateDrill(prompt: string, themes: Theme[], agentLessons: AgentLesson[]): Promise<Omit<Drill, 'id'>> {
         try {
             const result = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: `You are a trading coach and game designer for 'Project Neon Quant'. Your task is to generate a focused training drill based on the user's request. The drill must be a valid JSON object matching the provided schema.
-
+${getThemeContext(themes)}
+${getKnowledgeBaseContext(agentLessons)}
 User Request: "${prompt}"
 
 Generate a drill that fits this request. The scenarioSeed should be specific to the skill being tested.`,
@@ -336,27 +388,19 @@ Based on this data, provide feedback. For example, if the P&L is negative in a '
     }
 
     async generateChatResponse(prompt: string, history: AgentLog[]): Promise<string> {
-        // FIX: The systemInstruction was not a valid template literal, causing numerous parsing errors. This has been corrected by enclosing the entire string content within backticks.
         const systemInstruction = `You are Neon Quant, a helpful AI assistant and game designer for a project named 'Project Neon Quant'. You are an expert on the game's architecture and capabilities.
 
 Here is a summary of the project:
 - **Core Concept**: A story-driven, React-based trading game where players role-play as a quant trader.
-- **Two Modes**: 
+- **Three Modes**: 
   1.  **Agent Mode**: Your current mode. You interact with the user to design game content.
   2.  **Game Mode**: Where the user can play the game you help design.
-- **Your Capabilities**: In Agent Mode, you can be prompted to create four types of game assets:
-  1.  **Episodes**: Specific trading scenarios with stories, objectives, and character interactions.
-  2.  **Strategies**: Teachable trading playbooks with clear rules.
-  3.  **Characters**: NPCs with personalities, backstories, and AI-generated portraits.
-  4.  **Items**: In-game objects for the market, either cosmetic or functional.
+  3.  **VizLab**: A visual laboratory for creating themes, styles, and visual assets.
+- **Your Capabilities**: In Agent Mode, you can be prompted to create game assets like Episodes, Strategies, Characters, Items, Drills, and Visual Assets. You should also suggest a visual theme from the VizLab that fits the content you create.
 - **Technical Stack**:
   - The frontend is built with **React** and **Tailwind CSS**.
-  - The backend is currently a **mock service** (\`mockApi.ts\`) that simulates **Firestore** and **Google Cloud Storage**. It stores all game data in-memory for this demo.
+  - The backend is currently a **mock service** (\`mockApi.ts\`) that simulates **Firestore**.
   - You use the **Gemini API** (\`@google/genai\`) to generate all content. For structured data like episodes or characters, you use JSON mode with a predefined schema. For images, you use the Imagen model. For conversations like this one, you generate freeform text.
-- **Game World**:
-  - The player has a **Hub** screen which is the central navigation point.
-  - From the Hub, they can go to **Episode Select**, the **Market** (to spend 'Cred' currency), or the **Contacts** screen.
-  - The core gameplay happens in the **Trading Arena**.
 
 Your role is to answer the user's questions about the game, its architecture, your capabilities, or any other related topic. Be helpful, knowledgeable, and concise.`;
 
@@ -376,6 +420,38 @@ Your role is to answer the user's questions about the game, its architecture, yo
         } catch (error) {
             console.error("Error generating chat response:", error);
             throw new Error("Failed to get a response from Gemini.");
+        }
+    }
+
+    async generateCorrection(prompt: string, failedOutput: string, error: string): Promise<string> {
+        const correctionPrompt = `You are a self-correction AI assistant. Your previous attempt to generate content resulted in an error. Analyze the original prompt, the failed output, and the error message to produce a corrected, valid output.
+
+**Original Prompt:**
+---
+${prompt}
+---
+
+**Failed Output:**
+---
+${failedOutput}
+---
+
+**Error Message:**
+---
+${error}
+---
+
+Your task is to provide ONLY the corrected content that resolves the error. Do not include any explanation, just the corrected data.`;
+
+        try {
+            const result = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: correctionPrompt,
+            });
+            return result.text;
+        } catch (e) {
+            console.error("Error generating correction:", e);
+            throw new Error("Failed to generate correction from Gemini.");
         }
     }
 }
