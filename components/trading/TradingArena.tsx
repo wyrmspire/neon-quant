@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Episode, Session } from '../../types';
+import { Episode, Session, AiCharacter } from '../../types';
 import { Timeframe } from '../../ports/charting';
 import { LoadingIcon } from '../Icons';
 import { useGameCandlestickData } from '../../hooks/useGameCandles';
@@ -15,9 +15,10 @@ import { TradeDashboard } from './TradeDashboard';
 import { TradeControls } from './TradeControls';
 import { CoachsCorner } from './CoachsCorner';
 import { PhaseOverlay } from './PhaseOverlay';
+import { useData } from '../../context/DataContext';
 
 interface TradingArenaProps {
-    episode: Episode; // Keep this for context, but the drill will drive the action
+    episode: Episode; 
     onComplete: (session: Session) => void;
 }
 
@@ -58,7 +59,7 @@ export const TradingArena: React.FC<TradingArenaProps> = ({ episode, onComplete 
     const [timeframe, setTimeframe] = useState<Timeframe>(drill.timeframe);
     const anchorDate = useMemo(() => new Date(drill.anchorDate), [drill.anchorDate]);
 
-    const { allCandleData, isLoading: isLoadingCandles } = useGameCandlestickData(drill.symbol, anchorDate);
+    const { allCandleData, isLoading: isLoadingCandles } = useGameCandlestickData(episode.seed, anchorDate);
     const { indicators } = useGameIndicators(allCandleData, timeframe);
     
     const replayCandles = allCandleData['1m'];
@@ -81,8 +82,9 @@ export const TradingArena: React.FC<TradingArenaProps> = ({ episode, onComplete 
              const playPhase = drill.phases.find(p => p.id === 'play');
              if (playPhase?.durationSec && replayCandles.length > 0) {
                 const totalDuration = playPhase.durationSec;
-                const elapsed = totalDuration - time;
-                const progress = elapsed / totalDuration;
+                const elapsedSeconds = totalDuration - time;
+                const progress = elapsedSeconds / totalDuration;
+
                 setCandleIndex(Math.min(Math.floor(progress * replayCandles.length), replayCandles.length -1));
                 
                 // Evaluate coach tick
@@ -99,7 +101,7 @@ export const TradingArena: React.FC<TradingArenaProps> = ({ episode, onComplete 
 
         return () => director.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [director, isLoadingCandles, replayCandles.length]);
+    }, [director, isLoadingCandles, replayCandles.length, currentPrice, position, indicators]);
 
 
     const handleFinishReview = async () => {
@@ -135,8 +137,8 @@ export const TradingArena: React.FC<TradingArenaProps> = ({ episode, onComplete 
                 onComplete={handleComplete}
             />
             <header className="mb-4">
-                <h1 className="text-3xl font-bold text-white">{phase?.title || 'Loading...'}</h1>
-                <p className="text-gray-400">{drill.id}</p>
+                <h1 className="text-3xl font-bold text-white">{episode.title}</h1>
+                <p className="text-gray-400">{phase?.title || 'Loading...'}</p>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 flex-1">
                 <div className="md:col-span-3 flex flex-col gap-4">

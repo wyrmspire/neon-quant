@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AgentView } from './components/agent/AgentView';
 import { GameView } from './components/GameView';
 import { VizLabView } from './components/VizLabView';
-import { AppMode, GameScreen, VizLabTool } from './types';
+import { AppMode, GameScreen, VizLabTool, AppStateSetters } from './types';
 import { AgentIcon, GamepadIcon, VizLabIcon, TestTubeIcon } from './components/Icons';
 import { DevTestRunnerModal } from './components/DevTestRunnerModal';
 import { DataProvider } from './context/DataContext';
@@ -14,7 +14,7 @@ const App: React.FC = () => {
     const [vizLabTool, setVizLabTool] = useState<VizLabTool>('avatarStudio');
     
     const [isTestRunnerVisible, setIsTestRunnerVisible] = useState(false);
-    const [isSmokeTesting, setIsSmokeTesting] = useState(false);
+    const [isSmokeTestRunning, setIsSmokeTestRunning] = useState(false);
 
     // Expose debug controls to the window object for manual console testing
     useEffect(() => {
@@ -66,23 +66,25 @@ const App: React.FC = () => {
             </button>
         );
     };
+    
+    const appStateSetters: AppStateSetters = { setMode, setGameScreen, setVizLabTool };
 
     return (
         <DataProvider>
             <div className="bg-transparent text-white h-screen flex flex-col font-sans">
+                {isSmokeTestRunning && (
+                    <SmokeTestRunner 
+                        setters={appStateSetters} 
+                        onComplete={() => setIsSmokeTestRunning(false)} 
+                    />
+                )}
                 {isTestRunnerVisible && (
                     <DevTestRunnerModal 
                         onClose={() => setIsTestRunnerVisible(false)} 
                         onStartSmokeTest={() => {
+                            setIsSmokeTestRunning(true);
                             setIsTestRunnerVisible(false);
-                            setIsSmokeTesting(true);
                         }}
-                    />
-                )}
-                {isSmokeTesting && (
-                    <SmokeTestRunner 
-                        stateSetters={{ setMode, setGameScreen, setVizLabTool }}
-                        onComplete={() => setIsSmokeTesting(false)}
                     />
                 )}
                 <header className="flex justify-between items-center p-2 border-b border-gray-700/50 bg-black/30 backdrop-blur-md flex-shrink-0 z-10">

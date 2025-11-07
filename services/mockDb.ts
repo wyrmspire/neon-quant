@@ -30,11 +30,6 @@ const defaultDb: Db = {
             regime: "news",
             seed: "NEWS:CPI_SPIKE",
             objectives: ["<=1.0R max DD", "Tag every trade", "Take <= 3 trades"],
-            characterBeats: [
-                { t: 5, characterId: 'mentor', dialogue: "The plan is your shield. Don't go into battle without it." },
-                { t: 30, characterId: 'rival', dialogue: "CPI is printing money if you're fast enough. Plans are for dinosaurs." },
-                { t: 60, characterId: 'fixer', dialogue: "I hear a whisper... a big firm is trapped on the wrong side. Might be a good time to pile in." },
-            ],
             imageUrl: "https://picsum.photos/seed/ep1/600/400",
             reward: 500,
         },
@@ -45,10 +40,6 @@ const defaultDb: Db = {
             regime: "range",
             seed: "RANGE:WIDE_CHOP",
             objectives: ["No trades in the middle 50% of range", "Achieve 1.5R total", "End with positive P&L"],
-            characterBeats: [
-                { t: 10, characterId: 'mentor', dialogue: "Patience is a weapon in a ranging market. Let the price come to you." },
-                { t: 45, characterId: 'rival', dialogue: "Made a quick 2 points while you were meditating. Boring markets are the best." }
-            ],
             imageUrl: "https://picsum.photos/seed/ep2/600/400",
             reward: 350,
         }
@@ -120,8 +111,23 @@ const defaultDb: Db = {
     agentLessons: [],
 };
 
-// Function to load the DB from localStorage, falling back to default if it doesn't exist or is invalid
+// In-memory cache for the database to avoid repeated, expensive localStorage reads.
+let _dbCache: Db | null = null;
+
+// Function to save the DB to localStorage AND update the in-memory cache.
+function save(db: Db) {
+    _dbCache = db;
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+// Function to load the DB from localStorage, falling back to default.
+// It now uses the cache to ensure the expensive JSON.parse() only happens once.
 function load(): Db {
+    // If cache is populated, return it immediately.
+    if (_dbCache) {
+        return _dbCache;
+    }
+
     try {
         const storedDb = localStorage.getItem(DB_KEY);
         if (storedDb) {
@@ -129,33 +135,42 @@ function load(): Db {
             // Basic validation to ensure all keys from defaultDb exist
             const allKeysExist = Object.keys(defaultDb).every(key => key in parsedDb);
             if(allKeysExist) {
-                return parsedDb;
+                _dbCache = parsedDb; // Cache the loaded DB
+                return _dbCache;
             }
         }
     } catch (e) {
         console.error("Failed to parse DB from localStorage, resetting.", e);
-        // If parsing fails, we'll fall through and return the default DB
+        // If parsing fails, we'll fall through and use the default DB
     }
-    // If no stored DB, or it's malformed, save and return the default one
+    
+    // If no stored DB, or it's malformed, save and return the default one.
+    // The save function will also populate the cache.
     save(defaultDb);
     return defaultDb;
 }
 
-// Function to save the DB to localStorage
-function save(db: Db) {
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
-}
-
 // The mockDb service object
 export const mockDb = {
+    /**
+     * Reads the database. Returns a cached in-memory object after the first read
+     * to prevent expensive re-parsing of the localStorage string on subsequent calls.
+     */
     read(): Db {
         return load();
     },
+    /**
+     * Mutates the database. It loads the current state (from cache if available),
+     * applies the mutation, and then saves it back to localStorage and the cache.
+     */
     write(mutator: (db: Db) => void) {
         const db = load();
         mutator(db);
         save(db);
     },
+    /**
+     * Resets the database to its default state in both localStorage and the cache.
+     */
     reset() {
         save(defaultDb);
     }

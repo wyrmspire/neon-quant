@@ -5,7 +5,7 @@ import { mockDb } from './mockDb';
 class MockApiService {
     async getEpisodes(): Promise<Episode[]> {
         const db = mockDb.read();
-        return Promise.resolve(JSON.parse(JSON.stringify(db.episodes)));
+        return Promise.resolve(db.episodes);
     }
 
     async getEpisode(id: string): Promise<Episode | undefined> {
@@ -27,7 +27,7 @@ class MockApiService {
     
     async getCharacters(): Promise<AiCharacter[]> {
         const db = mockDb.read();
-        return Promise.resolve(JSON.parse(JSON.stringify(db.characters)));
+        return Promise.resolve(db.characters);
     }
 
     async getCharacter(id: string): Promise<AiCharacter | undefined> {
@@ -48,7 +48,7 @@ class MockApiService {
 
     async getProfile(): Promise<Profile> {
         const db = mockDb.read();
-        return Promise.resolve(JSON.parse(JSON.stringify(db.profile)));
+        return Promise.resolve(db.profile);
     }
 
     async grantEpisodeReward(reward: number): Promise<Profile> {
@@ -62,7 +62,7 @@ class MockApiService {
 
     async getStrategies(): Promise<Strategy[]> {
         const db = mockDb.read();
-        return Promise.resolve(JSON.parse(JSON.stringify(db.strategies)));
+        return Promise.resolve(db.strategies);
     }
 
     async createStrategy(strategy: Omit<Strategy, 'id'>): Promise<Strategy> {
@@ -78,7 +78,7 @@ class MockApiService {
 
     async getStoreItems(): Promise<Item[]> {
         const db = mockDb.read();
-        return Promise.resolve(JSON.parse(JSON.stringify(db.items)));
+        return Promise.resolve(db.items);
     }
 
     async createItem(item: Omit<Item, 'id'>): Promise<Item> {
@@ -113,7 +113,7 @@ class MockApiService {
 
     async getDrills(): Promise<Drill[]> {
         const db = mockDb.read();
-        return Promise.resolve(JSON.parse(JSON.stringify(db.drills)));
+        return Promise.resolve(db.drills);
     }
 
     async createDrill(drill: Omit<Drill, 'id'>): Promise<Drill> {
@@ -141,7 +141,7 @@ class MockApiService {
     async getVisualAssets(type: VisualAsset['type']): Promise<VisualAsset[]> {
         const db = mockDb.read();
         const assets = db.visualAssets.filter(asset => asset.type === type);
-        return Promise.resolve(JSON.parse(JSON.stringify(assets)));
+        return Promise.resolve(assets);
     }
 
     async createVisualAsset(assetData: Omit<VisualAsset, 'id'>): Promise<VisualAsset> {
@@ -157,7 +157,7 @@ class MockApiService {
 
     async getThemes(): Promise<Theme[]> {
         const db = mockDb.read();
-        return Promise.resolve(JSON.parse(JSON.stringify(db.themes)));
+        return Promise.resolve(db.themes);
     }
 
     async createTheme(theme: Omit<Theme, 'id'>): Promise<Theme> {
@@ -174,7 +174,7 @@ class MockApiService {
     // Fix: Added missing getAgentLessons method.
     async getAgentLessons(): Promise<AgentLesson[]> {
         const db = mockDb.read();
-        return Promise.resolve(JSON.parse(JSON.stringify(db.agentLessons)));
+        return Promise.resolve(db.agentLessons);
     }
 
     // Fix: Added missing createAgentLesson method.

@@ -6,12 +6,6 @@ export type VizLabTool = 'avatarStudio' | 'gradientDepth' | 'popAnimation' | 'st
 
 export type Regime = "trend" | "range" | "news" | "volcrush";
 
-export interface CharacterBeat {
-    t: number;
-    characterId: string;
-    dialogue: string;
-}
-
 export interface Episode {
     id: string;
     title: string;
@@ -19,7 +13,6 @@ export interface Episode {
     regime: Regime;
     seed: string;
     objectives: string[];
-    characterBeats: CharacterBeat[];
     imageUrl: string;
     reward: number;
     suggestedThemeId?: string;
@@ -177,9 +170,8 @@ export interface DataContextType extends AppData {
     addCreatedItem: <T extends AssetType>(item: T, type: CreationType) => void;
 }
 
-// Dev Tools
-export type AppStateSetters = {
+export interface AppStateSetters {
     setMode: (mode: AppMode) => void;
     setGameScreen: (screen: GameScreen) => void;
     setVizLabTool: (tool: VizLabTool) => void;
-};
+}

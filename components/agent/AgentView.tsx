@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-// Fix: Import VisualAsset to use for type annotation.
 import { AgentLog, CreationType, Theme, AgentLesson, VisualAsset } from '../../types';
 import { mockApi } from '../../services/mockApi';
 import { geminiService } from '../../services/geminiService';
@@ -18,7 +17,7 @@ export const AgentView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [creationType, setCreationType] = useState<CreationType>('chat');
     
-    // State for AI context (RAG) - fetched fresh before each call but stored here for display/debug
+    // State for AI context (RAG)
     const [availableThemes, setAvailableThemes] = useState<Theme[]>([]);
     const [agentLessons, setAgentLessons] = useState<AgentLesson[]>([]);
 
@@ -39,112 +38,96 @@ export const AgentView: React.FC = () => {
     const handleSend = async (input: string) => {
         if (!input.trim() || isLoading) return;
 
-        const userLog: AgentLog = { type: 'user', message: input };
-        setLogs(prev => [...prev, userLog]);
         setIsLoading(true);
+        const userLog: AgentLog = { type: 'user', message: input };
+        
+        // Use functional update to get the latest state for the history
+        setLogs(prev => [...prev, userLog]);
 
         try {
-            // Refresh knowledge base before each generation for the most up-to-date context
+            // Refresh context for RAG
             const themes = await mockApi.getThemes();
             const lessons = await mockApi.getAgentLessons();
             setAvailableThemes(themes);
             setAgentLessons(lessons);
 
-            // The main switch for handling different creation types
-            switch (creationType) {
-                case 'chat':
-                    setLogs(prev => [...prev, { type: 'system', message: 'Thinking...' }]);
-                    const chatHistory = logs.slice(-5); // Use last 5 logs for context
-                    const chatResponse = await geminiService.generateChatResponse(input, chatHistory);
-                    setLogs(prev => [...prev.slice(0, -1), { type: 'agent', message: chatResponse }]);
-                    break;
+            // This async function performs the core logic and returns the final agent log
+            const createContent = async (): Promise<AgentLog> => {
+                // The `logs` variable from the closure is used for providing history to Gemini
+                switch (creationType) {
+                    case 'chat': {
+                        setLogs(prev => [...prev, { type: 'system', message: 'Thinking...' }]);
+                        const chatResponse = await geminiService.generateChatResponse(input, logs);
+                        return { type: 'agent', message: chatResponse };
+                    }
+                    case 'episode': {
+                        setLogs(prev => [...prev, { type: 'system', message: 'Generating scenario...' }]);
+                        const generatedData = await geminiService.generateScenario(input, themes, lessons);
+                        setLogs(prev => [...prev.slice(0, -1), { type: 'system', message: 'Generating cover image...' }]);
+                        const imageUrl = await geminiService.generateImage(generatedData.title, '16:9');
+                        setLogs(prev => [...prev.slice(0, -1), { type: 'system', message: 'Saving to database...' }]);
+                        const newEpisode = await mockApi.createEpisode({ ...generatedData, imageUrl });
+                        addCreatedItem(newEpisode, 'episode');
+                        return { type: 'agent', message: `Created episode: "${newEpisode.title}".`, data: newEpisode };
+                    }
+                    case 'strategy': {
+                        setLogs(prev => [...prev, { type: 'system', message: 'Generating strategy...' }]);
+                        const data = await geminiService.generateStrategy(input, themes, lessons);
+                        setLogs(prev => [...prev.slice(0, -1), { type: 'system', message: 'Saving to database...' }]);
+                        const newStrategy = await mockApi.createStrategy(data);
+                        addCreatedItem(newStrategy, 'strategy');
+                        return { type: 'agent', message: `Created strategy: "${newStrategy.name}".`, data: newStrategy };
+                    }
+                    case 'character': {
+                        setLogs(prev => [...prev, { type: 'system', message: 'Generating character...' }]);
+                        const { imagePrompt, ...charData } = await geminiService.generateCharacter(input, themes, lessons);
+                        setLogs(prev => [...prev.slice(0, -1), { type: 'system', message: 'Generating portrait...' }]);
+                        const imageUrl = await geminiService.generateImage(imagePrompt, '1:1');
+                        setLogs(prev => [...prev.slice(0, -1), { type: 'system', message: 'Saving to database...' }]);
+                        const newCharacter = await mockApi.createCharacter({ ...charData, imageUrl });
+                        addCreatedItem(newCharacter, 'character');
+                        return { type: 'agent', message: `Created character: "${newCharacter.name}".`, data: newCharacter };
+                    }
+                    case 'item': {
+                        setLogs(prev => [...prev, { type: 'system', message: 'Generating item...' }]);
+                        const data = await geminiService.generateItem(input, themes, lessons);
+                        setLogs(prev => [...prev.slice(0, -1), { type: 'system', message: 'Saving to database...' }]);
+                        const newItem = await mockApi.createItem(data);
+                        addCreatedItem(newItem, 'item');
+                        return { type: 'agent', message: `Created item: "${newItem.name}".`, data: newItem };
+                    }
+                    case 'drill': {
+                        setLogs(prev => [...prev, { type: 'system', message: 'Generating drill...' }]);
+                        const data = await geminiService.generateDrill(input, themes, lessons);
+                        setLogs(prev => [...prev.slice(0, -1), { type: 'system', message: 'Saving to database...' }]);
+                        const newDrill = await mockApi.createDrill(data);
+                        addCreatedItem(newDrill, 'drill');
+                        return { type: 'agent', message: `Created drill: "${newDrill.name}".`, data: newDrill };
+                    }
+                    case 'visualAsset': {
+                        setLogs(prev => [...prev, { type: 'system', message: 'Generating asset details...' }]);
+                        const { name, imagePrompt } = await geminiService.generateVisualAssetDetails(input);
+                        setLogs(prev => [...prev.slice(0, -1), { type: 'system', message: `Generating image for "${name}"...` }]);
+                        const imageUrl = await geminiService.generateImage(imagePrompt, '1:1');
+                        const newAssetData: Omit<VisualAsset, 'id'> = { type: 'avatar', name, prompt: input, dataUrl: imageUrl };
+                        setLogs(prev => [...prev.slice(0, -1), { type: 'system', message: 'Saving to database...' }]);
+                        const newAsset = await mockApi.createVisualAsset(newAssetData);
+                        addCreatedItem(newAsset, 'visualAsset');
+                        return { type: 'agent', message: `Created asset: "${newAsset.name}".`, data: newAsset };
+                    }
+                }
+            };
+            
+            const finalLog = await createContent();
 
-                case 'episode':
-                    setLogs(prev => [...prev, { type: 'system', message: 'Generating scenario with Gemini...' }]);
-                    const generatedData = await geminiService.generateScenario(input, themes, lessons);
-                    
-                    setLogs(prev => [...prev, { type: 'system', message: 'Generating cover image for scenario...' }]);
-                    const imageUrl = await geminiService.generateImage(generatedData.title, '16:9');
+            // Replace the final system log with the actual agent response
+            setLogs(prev => [...prev.slice(0, -1), finalLog]);
 
-                    const newEpisodeData = { ...generatedData, imageUrl };
-                    
-                    setLogs(prev => [...prev, { type: 'system', message: 'Saving new scenario to mock database...' }]);
-                    const newEpisode = await mockApi.createEpisode(newEpisodeData);
-
-                    setLogs(prev => [...prev, { type: 'agent', message: `I've created a new episode: "${newEpisode.title}".`, data: newEpisode }]);
-                    addCreatedItem(newEpisode, 'episode');
-                    break;
-
-                case 'strategy':
-                    setLogs(prev => [...prev, { type: 'system', message: 'Generating trading strategy with Gemini...' }]);
-                    const generatedStrategyData = await geminiService.generateStrategy(input, themes, lessons);
-
-                    setLogs(prev => [...prev, { type: 'system', message: 'Saving new strategy to mock database...' }]);
-                    const newStrategy = await mockApi.createStrategy(generatedStrategyData);
-
-                    setLogs(prev => [...prev, { type: 'agent', message: `I've created a new strategy: "${newStrategy.name}".`, data: newStrategy }]);
-                    addCreatedItem(newStrategy, 'strategy');
-                    break;
-                
-                case 'character':
-                    setLogs(prev => [...prev, { type: 'system', message: 'Generating character profile with Gemini...' }]);
-                    const { imagePrompt, ...generatedCharData } = await geminiService.generateCharacter(input, themes, lessons);
-
-                    setLogs(prev => [...prev, { type: 'system', message: `Generating portrait based on prompt: "${imagePrompt}"...` }]);
-                    const charImageUrl = await geminiService.generateImage(imagePrompt, '1:1');
-                    
-                    const newCharacterData = { ...generatedCharData, imageUrl: charImageUrl };
-                    
-                    setLogs(prev => [...prev, { type: 'system', message: 'Saving new character to mock database...' }]);
-                    const newCharacter = await mockApi.createCharacter(newCharacterData);
-
-                    setLogs(prev => [...prev, { type: 'agent', message: `I've created a new character: "${newCharacter.name}".`, data: newCharacter }]);
-                    addCreatedItem(newCharacter, 'character');
-                    break;
-
-                case 'item':
-                    setLogs(prev => [...prev, { type: 'system', message: 'Generating game item with Gemini...' }]);
-                    const generatedItemData = await geminiService.generateItem(input, themes, lessons);
-
-                    setLogs(prev => [...prev, { type: 'system', message: 'Saving new item to mock database...' }]);
-                    const newItem = await mockApi.createItem(generatedItemData);
-
-                    setLogs(prev => [...prev, { type: 'agent', message: `I've created a new item: "${newItem.name}".`, data: newItem }]);
-                    addCreatedItem(newItem, 'item');
-                    break;
-                
-                case 'drill':
-                    setLogs(prev => [...prev, { type: 'system', message: 'Generating training drill with Gemini...' }]);
-                    const generatedDrillData = await geminiService.generateDrill(input, themes, lessons);
-
-                    setLogs(prev => [...prev, { type: 'system', message: 'Saving new drill to mock database...' }]);
-                    const newDrill = await mockApi.createDrill(generatedDrillData);
-
-                    setLogs(prev => [...prev, { type: 'agent', message: `I've created a new drill: "${newDrill.name}".`, data: newDrill }]);
-                    addCreatedItem(newDrill, 'drill');
-                    break;
-                
-                case 'visualAsset':
-                    setLogs(prev => [...prev, { type: 'system', message: 'Generating visual asset details with Gemini...' }]);
-                    const { name, imagePrompt: assetImagePrompt } = await geminiService.generateVisualAssetDetails(input);
-                    
-                    setLogs(prev => [...prev, { type: 'system', message: `Generating image for "${name}"...` }]);
-                    const assetImageUrl = await geminiService.generateImage(assetImagePrompt, '1:1');
-                    
-                    // Fix: Explicitly type newAssetData to ensure 'type' is not inferred as a generic string.
-                    const newAssetData: Omit<VisualAsset, 'id'> = { type: 'avatar', name, prompt: input, dataUrl: assetImageUrl };
-
-                    setLogs(prev => [...prev, { type: 'system', message: 'Saving visual asset to mock database...' }]);
-                    const newAsset = await mockApi.createVisualAsset(newAssetData);
-                    
-                    setLogs(prev => [...prev, { type: 'agent', message: `I've created a new visual asset: "${newAsset.name}".`, data: newAsset }]);
-                    addCreatedItem(newAsset, 'visualAsset');
-                    break;
-            }
         } catch (error) {
             console.error(error);
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-            setLogs(prev => [...prev.filter(l => l.type !== 'system'), { type: 'error', message: `Failed to create content. ${errorMessage}` }]);
+            // On error, replace the last log (system or user) with a descriptive error message
+            setLogs(prev => [...prev.slice(0, -1), { type: 'error', message: `Failed to create content. ${errorMessage}` }]);
         } finally {
             setIsLoading(false);
         }

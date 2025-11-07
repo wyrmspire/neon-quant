@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { geminiService } from '../services/geminiService';
-import { mockApi } from '../services/mockApi';
-import { MockChartData } from '../services/mockCharting';
-import { LoadingIcon, CheckCircleIcon, XCircleIcon, AgentIcon, TestTubeIcon } from './Icons';
+import { geminiService } from '../../services/geminiService';
+import { mockApi } from '../../services/mockApi';
+import { MockChartData } from '../../services/mockCharting';
+import { LoadingIcon, CheckCircleIcon, XCircleIcon, AgentIcon } from './Icons';
 
 type TestStatus = 'pending' | 'running' | 'success' | 'failure';
 interface TestLog {
@@ -170,58 +170,62 @@ export const DevTestRunnerModal: React.FC<{ onClose: () => void; onStartSmokeTes
                     <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
                 </header>
                 
-                <main className="p-6 overflow-y-auto space-y-3">
+                <div className="p-6 overflow-y-auto space-y-4">
                     <div className="p-4 bg-gray-900/50 rounded-lg">
                         <h3 className="font-semibold text-gray-200 mb-2">UI Smoke Test</h3>
-                        <p className="text-sm text-gray-400 mb-4">This test will automatically navigate through all major UI screens to help detect freezing or rendering bugs. Open the developer console to see the logs. If the UI freezes, the last logged action is the culprit.</p>
+                        <p className="text-sm text-gray-400 mb-4">Automatically cycles through all UI screens to check for rendering errors or freezes. The app will be unusable until the test is complete.</p>
                         <button 
                             onClick={onStartSmokeTest} 
-                            className="w-full py-2 bg-purple-600 text-white font-bold rounded-md hover:bg-purple-500 flex items-center justify-center gap-2"
+                            disabled={isTesting}
+                            className="w-full py-3 bg-purple-600 text-white font-bold rounded-md hover:bg-purple-500 disabled:bg-gray-600"
                         >
-                           <TestTubeIcon size={5}/> Start UI Smoke Test
+                            Start UI Smoke Test
                         </button>
                     </div>
-                    {testLogs.map((log) => (
-                        <div key={log.id}>
-                            <div className={`p-3 rounded-lg flex items-start gap-3 ${log.status === 'failure' ? 'bg-red-900/30' : 'bg-gray-900/50'}`}>
-                                <div className="mt-0.5"><LogStatusIcon status={log.status} /></div>
-                                <div>
-                                    <p className="font-semibold text-gray-200">{log.message}</p>
-                                    {log.details && <p className="text-sm text-gray-400 mt-1">{log.details}</p>}
-                                </div>
-                            </div>
-                            {log.correction && (
-                                <div className="ml-8 mt-2 p-4 border-l-2 border-purple-500 bg-purple-900/20 rounded-r-lg">
-                                    <h4 className="font-bold text-purple-300">Self-Correction Analysis</h4>
-                                    <div className="mt-2 space-y-2 text-sm">
-                                        <p className="text-gray-400"><strong className="text-gray-200">Error:</strong> A JSON parsing error occurred due to an unescaped quote.</p>
-                                        <div>
-                                            <p className="text-gray-200 font-semibold">AI's Proposed Correction:</p>
-                                            <pre className="p-2 mt-1 bg-black/50 rounded-md text-green-300 text-xs whitespace-pre-wrap">{log.correction.correctedCode}</pre>
-                                        </div>
-                                         <button 
-                                            onClick={() => handlePromoteLesson(log)} 
-                                            disabled={log.correction.isPromoted}
-                                            className="px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-md hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                                        >
-                                            {log.correction.isPromoted ? 'Lesson Learned' : 'Promote to Knowledge Base'}
-                                        </button>
+                    <div className="p-4 bg-gray-900/50 rounded-lg">
+                        <h3 className="font-semibold text-gray-200 mb-2">API Test Suite</h3>
+                        <p className="text-sm text-gray-400 mb-4">Run automated tests against the Gemini API, Mock API, and Charting services. This includes a test of the agent's self-correction capabilities.</p>
+                        <button 
+                            onClick={runTests} 
+                            disabled={isTesting}
+                            className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded-md hover:bg-yellow-400 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isTesting ? <><LoadingIcon /> Running API Tests...</> : 'Start API Test Suite'}
+                        </button>
+                    </div>
+                    {testLogs.length > 0 && <div className="border-t border-gray-700 pt-4 mt-4 space-y-3">
+                        {testLogs.map((log) => (
+                            <div key={log.id}>
+                                <div className={`p-3 rounded-lg flex items-start gap-3 ${log.status === 'failure' ? 'bg-red-900/30' : 'bg-gray-900/50'}`}>
+                                    <div className="mt-0.5"><LogStatusIcon status={log.status} /></div>
+                                    <div>
+                                        <p className="font-semibold text-gray-200">{log.message}</p>
+                                        {log.details && <p className="text-sm text-gray-400 mt-1">{log.details}</p>}
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    ))}
-                </main>
-
-                <footer className="p-4 border-t border-gray-700 flex-shrink-0">
-                    <button 
-                        onClick={runTests} 
-                        disabled={isTesting}
-                        className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded-md hover:bg-yellow-400 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        {isTesting ? <><LoadingIcon /> Running API Tests...</> : 'Start API Test Suite'}
-                    </button>
-                </footer>
+                                {log.correction && (
+                                    <div className="ml-8 mt-2 p-4 border-l-2 border-purple-500 bg-purple-900/20 rounded-r-lg">
+                                        <h4 className="font-bold text-purple-300">Self-Correction Analysis</h4>
+                                        <div className="mt-2 space-y-2 text-sm">
+                                            <p className="text-gray-400"><strong className="text-gray-200">Error:</strong> A JSON parsing error occurred due to an unescaped quote.</p>
+                                            <div>
+                                                <p className="text-gray-200 font-semibold">AI's Proposed Correction:</p>
+                                                <pre className="p-2 mt-1 bg-black/50 rounded-md text-green-300 text-xs whitespace-pre-wrap">{log.correction.correctedCode}</pre>
+                                            </div>
+                                            <button 
+                                                onClick={() => handlePromoteLesson(log)} 
+                                                disabled={log.correction.isPromoted}
+                                                className="px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-md hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                                            >
+                                                {log.correction.isPromoted ? 'Lesson Learned' : 'Promote to Knowledge Base'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>}
+                </div>
             </div>
              <style>{`
                 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

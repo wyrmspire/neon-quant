@@ -9,7 +9,8 @@ const createIcon = (path: React.ReactNode): React.FC<IconProps> => {
     return ({ size = 6, className = '' }) => (
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            className={`w-${size} h-${size} ${className}`}
+            className={className}
+            style={{ width: `${size / 4}rem`, height: `${size / 4}rem` }}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -27,7 +28,10 @@ export const SendIcon = createIcon(
 );
 
 export const LoadingIcon: React.FC<IconProps> = ({ size = 6, className = '' }) => (
-    <svg className={`animate-spin w-${size} h-${size} ${className}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg 
+        className={`animate-spin ${className}`} 
+        style={{ width: `${size / 4}rem`, height: `${size / 4}rem` }}
+        viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M4.93 4.93L7.76 7.76" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

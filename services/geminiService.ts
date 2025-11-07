@@ -26,22 +26,9 @@ const episodeSchema = {
             items: { type: Type.STRING },
             description: 'A list of 3-4 clear, measurable objectives for the player.'
         },
-        characterBeats: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    t: { type: Type.INTEGER, description: 'Time in seconds from episode start when this beat occurs.' },
-                    characterId: { type: Type.STRING, enum: ["mentor", "rival", "fixer"], description: 'The ID of the character speaking.' },
-                    dialogue: { type: Type.STRING, description: 'The line of dialogue the character says.' }
-                },
-                required: ['t', 'characterId', 'dialogue']
-            },
-            description: 'Narrative moments that happen during the episode.'
-        },
         ...suggestedThemeProperty,
     },
-    required: ['title', 'description', 'regime', 'seed', 'objectives', 'characterBeats']
+    required: ['title', 'description', 'regime', 'seed', 'objectives']
 };
 
 const strategySchema = {

@@ -1,108 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { AppStateSetters, AppMode, GameScreen, VizLabTool } from '../../types';
-import { LoadingIcon } from '../Icons';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AppStateSetters, GameScreen, VizLabTool, AppMode } from '../../types';
+import { LoadingIcon, CheckCircleIcon } from '../Icons';
+
+// This is the sequence of screens the test will navigate through.
+const TEST_SEQUENCE: { mode: AppMode; screen?: GameScreen; tool?: VizLabTool }[] = [
+    { mode: 'agent' },
+    { mode: 'game', screen: 'hub' },
+    { mode: 'game', screen: 'episodeSelect' },
+    { mode: 'game', screen: 'strategybook' },
+    { mode: 'game', screen: 'dojo' },
+    { mode: 'game', screen: 'market' },
+    { mode: 'game', screen: 'contacts' },
+    // Skip 'trading', 'debrief' as they require state
+    { mode: 'vizlab', tool: 'avatarStudio' },
+    { mode: 'vizlab', tool: 'themeStudio' },
+    { mode: 'vizlab', tool: 'gradientDepth' },
+    { mode: 'vizlab', tool: 'popAnimation' },
+    { mode: 'vizlab', tool: 'streamingText' },
+    { mode: 'vizlab', tool: 'fadeEffects' },
+    { mode: 'vizlab', tool: 'pulsingLights' },
+];
+
+const TEST_DELAY_MS = 750;
 
 interface SmokeTestRunnerProps {
-    stateSetters: AppStateSetters;
+    setters: AppStateSetters;
     onComplete: () => void;
 }
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+export const SmokeTestRunner: React.FC<SmokeTestRunnerProps> = ({ setters, onComplete }) => {
+    const [status, setStatus] = useState<'ready' | 'running' | 'done'>('ready');
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [currentStep, setCurrentStep] = useState('Initializing...');
 
-const testSteps: { action: keyof AppStateSetters | 'log' | 'wait'; payload?: any; message?: string }[] = [
-    { action: 'log', message: 'Starting UI Smoke Test...' },
-    { action: 'setMode', payload: 'agent' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setMode', payload: 'vizlab' },
-    { action: 'wait', payload: 1000 },
-    { action: 'setVizLabTool', payload: 'themeStudio' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setVizLabTool', payload: 'gradientDepth' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setVizLabTool', payload: 'popAnimation' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setVizLabTool', payload: 'streamingText' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setVizLabTool', payload: 'fadeEffects' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setVizLabTool', payload: 'pulsingLights' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setVizLabTool', payload: 'avatarStudio' }, // A suspected component
-    { action: 'wait', payload: 2000 },
-    { action: 'setMode', payload: 'game' },
-    { action: 'wait', payload: 1000 },
-    { action: 'setGameScreen', payload: 'episodeSelect' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setGameScreen', payload: 'strategybook' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setGameScreen', payload: 'dojo' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setGameScreen', payload: 'market' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setGameScreen', payload: 'contacts' },
-    { action: 'wait', payload: 1500 },
-    { action: 'setGameScreen', payload: 'hub' },
-    { action: 'wait', payload: 1000 },
-    { action: 'setMode', payload: 'agent' },
-    { action: 'log', message: 'Smoke Test Complete!' },
-];
+    const runTestStep = useCallback((index: number) => {
+        if (index >= TEST_SEQUENCE.length) {
+            setStatus('done');
+            setCurrentStep('Test Complete!');
+            setTimeout(onComplete, 1500); // Wait before closing
+            return;
+        }
 
-export const SmokeTestRunner: React.FC<SmokeTestRunnerProps> = ({ stateSetters, onComplete }) => {
-    const [status, setStatus] = useState('Starting...');
-    const [currentStep, setCurrentStep] = useState(0);
+        const step = TEST_SEQUENCE[index];
+        setters.setMode(step.mode);
+        if (step.screen) {
+            setters.setGameScreen(step.screen);
+            setCurrentStep(`Testing Game > ${step.screen}`);
+        } else if (step.tool) {
+            setters.setVizLabTool(step.tool);
+             setCurrentStep(`Testing VizLab > ${step.tool}`);
+        } else {
+             setCurrentStep(`Testing Mode > ${step.mode}`);
+        }
+        setCurrentIndex(index);
+    }, [setters, onComplete]);
 
     useEffect(() => {
-        let isCancelled = false;
+        if (status !== 'running') return;
 
-        const runTest = async () => {
-            for (const step of testSteps) {
-                if (isCancelled) break;
-                
-                const statusMessage = step.message || `Executing: ${step.action} with payload ${step.payload || 'N/A'}`;
-                console.log(`%c[Smoke Test] ${statusMessage}`, 'color: #8B5CF6');
-                setStatus(statusMessage);
-                setCurrentStep(prev => prev + 1);
+        const timer = setTimeout(() => {
+            runTestStep(currentIndex + 1);
+        }, TEST_DELAY_MS);
 
-                switch (step.action) {
-                    case 'setMode':
-                        stateSetters.setMode(step.payload as AppMode);
-                        break;
-                    case 'setGameScreen':
-                        stateSetters.setGameScreen(step.payload as GameScreen);
-                        break;
-                    case 'setVizLabTool':
-                        stateSetters.setVizLabTool(step.payload as VizLabTool);
-                        break;
-                    case 'wait':
-                        await sleep(step.payload as number);
-                        break;
-                }
-                 await sleep(200); // Small buffer between steps
-            }
-            if (!isCancelled) {
-                onComplete();
-            }
-        };
+        return () => clearTimeout(timer);
+    }, [status, currentIndex, runTestStep]);
 
-        runTest();
+    const handleStart = () => {
+        setStatus('running');
+        runTestStep(0);
+    };
 
-        return () => {
-            isCancelled = true;
-        };
-    }, [stateSetters, onComplete]);
-
-    const progress = (currentStep / testSteps.length) * 100;
-
-    return (
-        <div className="fixed bottom-4 right-4 bg-gray-900 border-2 border-purple-500 rounded-lg shadow-2xl p-4 w-96 z-50 text-white">
-            <h3 className="font-bold text-purple-300 flex items-center gap-2 mb-2">
-                <LoadingIcon className="animate-spin" size={5}/> UI Smoke Test in Progress...
-            </h3>
-            <p className="text-sm text-gray-400 truncate">{status}</p>
-            <div className="w-full bg-gray-700 rounded-full h-2.5 mt-3">
-                <div className="bg-purple-500 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+    if (status === 'ready') {
+        return (
+            <div className="fixed bottom-4 right-4 bg-gray-800 border-2 border-purple-400/50 rounded-xl shadow-2xl p-6 text-white z-50 max-w-sm">
+                <h2 className="text-xl font-bold text-purple-300 mb-2">UI Smoke Test Ready</h2>
+                <p className="text-sm text-gray-300 mb-4">This will automatically cycle through all major UI screens to check for crashes. The app will be unresponsive during the test.</p>
+                <button onClick={handleStart} className="w-full py-2 bg-purple-600 font-bold rounded-md hover:bg-purple-500">
+                    Start Test
+                </button>
             </div>
-             <button onClick={onComplete} className="text-xs text-gray-500 hover:text-white mt-2">Cancel</button>
+        );
+    }
+    
+    return (
+        <div className="fixed bottom-4 right-4 bg-gray-800 border-2 border-purple-400/50 rounded-xl shadow-2xl p-4 text-white z-50">
+            <div className="flex items-center gap-4">
+                {status === 'running' ? <LoadingIcon className="text-purple-400" /> : <CheckCircleIcon className="text-green-400" />}
+                <div>
+                    <h3 className="font-bold text-lg">
+                        {status === 'running' ? 'Smoke Test Running...' : 'Smoke Test Complete'}
+                    </h3>
+                    <p className="text-sm text-gray-400">{currentStep}</p>
+                </div>
+            </div>
         </div>
     );
 };
