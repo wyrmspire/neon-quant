@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { GameScreen, Profile } from '../types';
-import { mockApi } from '../services/mockApi';
-import { LoadingIcon, StoreIcon, ContactsIcon, GamepadIcon } from './Icons';
+import React from 'react';
+import { GameScreen } from '../types';
+import { LoadingIcon, StoreIcon, ContactsIcon, GamepadIcon, DojoIcon, PlaybookIcon } from './Icons';
+import { useData } from '../context/DataContext';
 
 interface HubViewProps {
     onNavigate: (screen: GameScreen) => void;
@@ -23,22 +23,33 @@ const NavCard: React.FC<{ title: string; description: string; icon: React.ReactN
 );
 
 export const HubView: React.FC<HubViewProps> = ({ onNavigate }) => {
-    const [profile, setProfile] = useState<Profile | null>(null);
+    const { profile, isLoading } = useData();
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            const data = await mockApi.getProfile();
-            setProfile(data);
-        };
-        fetchProfile();
-    }, []);
-
-    if (!profile) {
+    if (isLoading || !profile) {
         return <div className="flex items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Loading Profile...</span></div>;
     }
 
+    const hasBonsai = profile.inventory.includes('item1');
+
     return (
-        <div className="p-8 max-w-4xl mx-auto">
+        <div className="p-8 max-w-4xl mx-auto relative">
+            {hasBonsai && (
+                <div className="absolute top-10 right-[-100px] text-green-400 opacity-80" title="Your Neon Bonsai">
+                    <pre className="text-xs leading-tight">
+                        {`
+      ,d88b.d88b,
+      88888888888
+      \`Y8888888Y'
+        \`Y888Y'
+          Y8Y
+          |'|
+         / | \\
+        "  |  "
+        \`--'--'
+                        `}
+                    </pre>
+                </div>
+            )}
             <header className="flex justify-between items-center mb-10">
                 <div>
                     <h1 className="text-4xl font-bold tracking-tight text-white">Welcome, {profile.handle}</h1>
@@ -56,6 +67,18 @@ export const HubView: React.FC<HubViewProps> = ({ onNavigate }) => {
                     description="Face a new challenge in the market arena."
                     icon={<GamepadIcon size={8} />}
                     onClick={() => onNavigate('episodeSelect')}
+                />
+                 <NavCard 
+                    title="Strategy Playbook"
+                    description="Review your library of trading strategies."
+                    icon={<PlaybookIcon size={8} />}
+                    onClick={() => onNavigate('strategybook')}
+                />
+                 <NavCard 
+                    title="Enter Dojo"
+                    description="Hone your skills with focused practice drills."
+                    icon={<DojoIcon size={8} />}
+                    onClick={() => onNavigate('dojo')}
                 />
                 <NavCard 
                     title="Visit Market"

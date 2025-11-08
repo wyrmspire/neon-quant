@@ -1,52 +1,92 @@
 import React, { useState } from 'react';
-import { EpisodeSelectScreen } from './EpisodeSelectScreen';
-import { TradingArena } from './TradingArena';
+import { GameScreen, Episode, Session, Drill } from '../types';
 import { HubView } from './HubView';
+import { EpisodeSelectScreen } from './EpisodeSelectScreen';
+import { TradingArena } from './trading/TradingArena';
 import { MarketScreen } from './MarketScreen';
 import { ContactsScreen } from './ContactsScreen';
-import { GameScreen, Episode } from '../types';
+import { DojoScreen } from './DojoScreen';
+import { DebriefScreen } from './DebriefScreen';
+import { StrategyPlaybookScreen } from './StrategyPlaybookScreen';
+import { useData } from '../context/DataContext';
 
-export const GameView: React.FC = () => {
-    const [currentScreen, setCurrentScreen] = useState<GameScreen>('hub');
+interface GameViewProps {
+    screen: GameScreen;
+    setScreen: (screen: GameScreen) => void;
+}
+
+export const GameView: React.FC<GameViewProps> = ({ screen, setScreen }) => {
     const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
+    const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
+    const [debriefData, setDebriefData] = useState<{ session: Session; episode: Episode } | null>(null);
+    const { grantEpisodeReward } = useData();
 
     const handleEpisodeSelect = (episode: Episode) => {
         setSelectedEpisode(episode);
-        setCurrentScreen('trading');
+        setSelectedDrill(null); // Ensure no drill is selected
+        setScreen('trading');
     };
     
-    const handleExitEpisode = (reward?: number) => {
-        setSelectedEpisode(null);
-        setCurrentScreen('hub'); // Return to Hub after an episode
-    };
-
-    const navigateTo = (screen: GameScreen) => {
-        setCurrentScreen(screen);
+    const handleDrillSelect = (drill: Drill) => {
+        setSelectedDrill(drill);
+        setSelectedEpisode(null); // Ensure no episode is selected
+        setScreen('trading');
     }
 
+    const handleSessionComplete = async (session: Session) => {
+        // Only grant rewards for episodes, not drills
+        if (selectedEpisode) {
+            await grantEpisodeReward(selectedEpisode.reward);
+            setDebriefData({ session, episode: selectedEpisode });
+            setScreen('debrief');
+        } else {
+            // For drills, just go back to the hub or dojo screen
+            setScreen('dojo');
+        }
+        
+        // Clear selections for the next run
+        setSelectedEpisode(null);
+        setSelectedDrill(null);
+    };
+
+    const handleAcknowledgeDebrief = () => {
+        setDebriefData(null);
+        setScreen('hub');
+    };
+
     const renderScreen = () => {
-        switch (currentScreen) {
+        switch (screen) {
             case 'hub':
-                return <HubView onNavigate={navigateTo} />;
-            case 'market':
-                return <MarketScreen onNavigate={navigateTo} />;
-            case 'contacts':
-                return <ContactsScreen onNavigate={navigateTo} />;
+                return <HubView onNavigate={setScreen} />;
             case 'episodeSelect':
                 return <EpisodeSelectScreen onSelect={handleEpisodeSelect} />;
+            case 'strategybook':
+                return <StrategyPlaybookScreen onNavigate={setScreen} />;
             case 'trading':
-                return selectedEpisode ? <TradingArena episode={selectedEpisode} onExit={handleExitEpisode} /> : <HubView onNavigate={navigateTo} />;
+                if (selectedEpisode) {
+                    return <TradingArena episode={selectedEpisode} onComplete={handleSessionComplete} />;
+                }
+                if (selectedDrill) {
+                    return <TradingArena drill={selectedDrill} onComplete={handleSessionComplete} />;
+                }
+                setScreen('hub'); // Fallback if nothing is selected
+                return null;
+            case 'market':
+                return <MarketScreen onNavigate={setScreen} />;
+            case 'contacts':
+                return <ContactsScreen onNavigate={setScreen} />;
+            case 'dojo':
+                return <DojoScreen onNavigate={setScreen} onSelectDrill={handleDrillSelect} />;
             case 'debrief':
-                // Debrief screen component would go here
-                return <div>Debrief Screen</div>;
+                if (debriefData) {
+                     return <DebriefScreen session={debriefData.session} episode={debriefData.episode} onAcknowledge={handleAcknowledgeDebrief} />;
+                }
+                 setScreen('hub'); // Fallback if debrief data is missing
+                 return null;
             default:
-                return <HubView onNavigate={navigateTo} />;
+                return <HubView onNavigate={setScreen} />;
         }
     };
 
-    return (
-        <div className="h-full bg-gray-900 text-white">
-            {renderScreen()}
-        </div>
-    );
+    return <div className="h-full view-container">{renderScreen()}</div>;
 };
