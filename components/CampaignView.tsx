@@ -24,8 +24,8 @@ export const CampaignView: React.FC = () => {
         if (prompt) {
             setIsAgentWorking(true);
             try {
-                // We call the orchestrator directly for this UI-specific action
-                await agentOrchestrator.createCampaign(prompt, addCreatedItem);
+                const newCampaign = await agentOrchestrator.createCampaign(prompt);
+                addCreatedItem(newCampaign, 'campaign');
             } catch (error) {
                 console.error("Failed to create campaign:", error);
                 alert("Sorry, the agent failed to create a new campaign.");

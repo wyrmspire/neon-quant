@@ -122,7 +122,7 @@ class AgentOrchestrator {
     }
 
 
-    public async createCampaign(prompt: string, addCreatedItem: HandlePromptArgs['addCreatedItem']): Promise<Campaign> {
+    public async createCampaign(prompt: string): Promise<Campaign> {
         const campaignData = await geminiService.generateCampaignOutline(prompt);
         const nodes: CampaignNode[] = campaignData.initialNodes.map((node, index) => ({
             ...node,
@@ -137,7 +137,6 @@ class AgentOrchestrator {
             nodes: nodes,
             links: [], // No links initially
         });
-        addCreatedItem(newCampaign, 'campaign');
         return newCampaign;
     }
     
@@ -187,7 +186,8 @@ class AgentOrchestrator {
                     break;
                 
                 case 'campaign':
-                    const newCampaign = await this.createCampaign(prompt, addCreatedItem);
+                    const newCampaign = await this.createCampaign(prompt);
+                    addCreatedItem(newCampaign, 'campaign');
                     logCallback({ type: 'agent', message: `Successfully created new campaign: "${newCampaign.title}".`, data: newCampaign, action: 'responding' });
                     break;
 

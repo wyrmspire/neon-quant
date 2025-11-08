@@ -104,9 +104,8 @@ export const DevTestRunnerModal: React.FC<{ onClose: () => void; onStartSmokeTes
         // Test 4: Agent Orchestrator for Campaign Creation
         addLog('Running: Agent Orchestrator Test (Campaign Gen)', 'running');
         try {
-            // The orchestrator function requires an addCreatedItem callback. We can mock it for the test.
-            const mockAddCreatedItem = () => { console.log('Mock addCreatedItem called during test.'); };
-            await agentOrchestrator.createCampaign('A test campaign about a lone wolf trader', mockAddCreatedItem);
+            // Fix: The createCampaign method only takes one argument. The mock callback is not needed here.
+            await agentOrchestrator.createCampaign('A test campaign about a lone wolf trader');
             updateLastLog('success', 'Successfully orchestrated campaign creation.');
         } catch (e) {
             updateLastLog('failure', e instanceof Error ? e.message : String(e));
