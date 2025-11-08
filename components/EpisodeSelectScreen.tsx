@@ -1,17 +1,42 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Episode } from '../types';
+import { mockApi } from '../services/mockApi';
 import { LoadingIcon } from './Icons';
-import { RegimeTag } from './ui/RegimeTag';
-import { useData } from '../context/DataContext';
 
 interface EpisodeSelectScreenProps {
     onSelect: (episode: Episode) => void;
 }
 
-export const EpisodeSelectScreen: React.FC<EpisodeSelectScreenProps> = ({ onSelect }) => {
-    const { episodes, isLoading } = useData();
+const RegimeTag: React.FC<{ regime: Episode['regime'] }> = ({ regime }) => {
+    const regimeStyles: Record<Episode['regime'], string> = {
+        news: 'bg-red-500/20 text-red-300 border-red-500/30',
+        range: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+        trend: 'bg-green-500/20 text-green-300 border-green-500/30',
+        volcrush: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+    };
+    return (
+        <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${regimeStyles[regime]}`}>
+            {regime.toUpperCase()}
+        </span>
+    );
+};
 
-    if (isLoading) {
+export const EpisodeSelectScreen: React.FC<EpisodeSelectScreenProps> = ({ onSelect }) => {
+    const [episodes, setEpisodes] = useState<Episode[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchEpisodes = async () => {
+            setLoading(true);
+            const data = await mockApi.getEpisodes();
+            setEpisodes(data);
+            setLoading(false);
+        };
+        fetchEpisodes();
+    }, []);
+
+    if (loading) {
         return <div className="flex items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Loading Episodes...</span></div>;
     }
 
@@ -48,3 +73,4 @@ export const EpisodeSelectScreen: React.FC<EpisodeSelectScreenProps> = ({ onSele
         </div>
     );
 };
+   

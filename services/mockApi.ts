@@ -1,15 +1,87 @@
-import { Episode, AiCharacter, Profile, Strategy, Item, Drill, CoachFeedback, VisualAsset, Theme, AgentLesson, Campaign } from '../types';
-import { mockDb } from './mockDb';
+import { Episode, AiCharacter, Profile, Strategy, Item } from '../types';
+
+let episodes: Episode[] = [
+    {
+        id: 'ep1',
+        title: "Night of the CPI",
+        description: "A volatile news event is about to drop. Keep your cool and trade the reaction, not the headline.",
+        regime: "news",
+        seed: "ES_2024-02-13_0830-1100",
+        objectives: ["<=1.0R max DD", "Tag every trade", "Take <= 3 trades"],
+        characterBeats: [
+            { t: 5, characterId: 'mentor', dialogue: "The plan is your shield. Don't go into battle without it." },
+            { t: 30, characterId: 'rival', dialogue: "CPI is printing money if you're fast enough. Plans are for dinosaurs." },
+            { t: 60, characterId: 'fixer', dialogue: "I hear a whisper... a big firm is trapped on the wrong side. Might be a good time to pile in." },
+        ],
+        imageUrl: "https://picsum.photos/seed/ep1/600/400",
+        reward: 500,
+    },
+    {
+        id: 'ep2',
+        title: "The Chop Shop",
+        description: "The market is a ranging mess. Your job is to avoid getting chopped up. Scalp the edges or sit on your hands.",
+        regime: "range",
+        seed: "ES_2024-05-20_1000-1200",
+        objectives: ["No trades in the middle 50% of range", "Achieve 1.5R total", "End with positive P&L"],
+        characterBeats: [
+            { t: 10, characterId: 'mentor', dialogue: "Patience is a weapon in a ranging market. Let the price come to you." },
+            { t: 45, characterId: 'rival', dialogue: "Made a quick 2 points while you were meditating. Boring markets are the best." }
+        ],
+        imageUrl: "https://picsum.photos/seed/ep2/600/400",
+        reward: 350,
+    }
+];
+
+let characters: AiCharacter[] = [
+    { id: 'mentor', name: 'Kai', personality: 'A calm, process-oriented veteran trader who values risk management above all else.', imageUrl: 'https://picsum.photos/seed/kai/200/200', bio: 'Kai has seen it all and believes that a solid process is the only thing that separates gamblers from traders.' },
+    { id: 'rival', name: 'Zane', personality: 'A cocky, P&L-driven trader who loves to brag and takes big risks.', imageUrl: 'https://picsum.photos/seed/zane/200/200', bio: 'Zane lives for the thrill of the trade and has a flashy apartment to show for it. He thinks rules are for the timid.' },
+    { id: 'fixer', name: 'Silas', personality: 'A shadowy figure who offers tempting shortcuts and morally ambiguous tips.', imageUrl: 'https://picsum.photos/seed/silas/200/200', bio: 'No one knows where Silas gets his information, but it always seems to be one step ahead of the market. His help comes at a price.' }
+];
+
+let userProfile: Profile = {
+    handle: "PlayerOne",
+    tier: "novice",
+    unlockedEpisodes: ["ep1"],
+    cred: 1200,
+    inventory: ['item1'],
+    settings: { dailyLossLimit: 1000, autoLock: true }
+};
+
+let strategies: Strategy[] = [
+    {
+        id: 'strat1',
+        name: 'Beginner Trend Pullback',
+        description: 'A simple strategy for beginners to catch pullbacks in an established trend. Wait for the price to pull back, then enter in the direction of the trend.',
+        regime: 'trend',
+        entryConditions: [
+            'Identify a clear uptrend or downtrend.',
+            'Wait for price to pull back to a key support/resistance level.',
+            'Enter on a confirmation candle in the trend\'s direction.'
+        ],
+        exitConditions: [
+            'Take profit at the next major level.',
+            'Exit if the trend structure is broken.'
+        ],
+        riskManagement: [
+            'Place stop-loss behind the pullback structure.',
+            'Risk no more than 1R per trade.'
+        ]
+    }
+];
+
+let storeItems: Item[] = [
+    { id: 'item1', name: 'Neon Bonsai', description: 'A stylish, glowing bonsai tree for your desk. Purely cosmetic, but it really ties the room together.', price: 750, type: 'cosmetic' },
+    { id: 'item2', name: 'Advanced Charting Suite', description: 'Unlocks additional indicators and drawing tools in the Trading Arena.', price: 2500, type: 'tool' },
+    { id: 'item3', name: 'Rival Taunt Pack', description: 'Get a new set of taunts from Zane when you outperform him.', price: 300, type: 'cosmetic' },
+];
 
 class MockApiService {
     async getEpisodes(): Promise<Episode[]> {
-        const db = mockDb.read();
-        return Promise.resolve(db.episodes);
+        return Promise.resolve(JSON.parse(JSON.stringify(episodes)));
     }
 
     async getEpisode(id: string): Promise<Episode | undefined> {
-        const db = mockDb.read();
-        return Promise.resolve(db.episodes.find(e => e.id === id));
+        return Promise.resolve(episodes.find(e => e.id === id));
     }
 
     async createEpisode(episode: Omit<Episode, 'id' | 'reward'>): Promise<Episode> {
@@ -18,20 +90,16 @@ class MockApiService {
             id: `ep${Date.now()}`,
             reward: Math.floor(Math.random() * 200) + 300, // Random reward
         };
-        mockDb.write(db => {
-            db.episodes.push(newEpisode);
-        });
+        episodes.push(newEpisode);
         return Promise.resolve(newEpisode);
     }
     
     async getCharacters(): Promise<AiCharacter[]> {
-        const db = mockDb.read();
-        return Promise.resolve(db.characters);
+        return Promise.resolve(JSON.parse(JSON.stringify(characters)));
     }
 
     async getCharacter(id: string): Promise<AiCharacter | undefined> {
-        const db = mockDb.read();
-        return Promise.resolve(db.characters.find(c => c.id === id));
+        return Promise.resolve(characters.find(c => c.id === id));
     }
 
     async createCharacter(character: Omit<AiCharacter, 'id'>): Promise<AiCharacter> {
@@ -39,29 +107,21 @@ class MockApiService {
             ...character,
             id: `char${Date.now()}`
         };
-        mockDb.write(db => {
-            db.characters.push(newCharacter);
-        });
+        characters.push(newCharacter);
         return Promise.resolve(newCharacter);
     }
 
     async getProfile(): Promise<Profile> {
-        const db = mockDb.read();
-        return Promise.resolve(db.profile);
+        return Promise.resolve(JSON.parse(JSON.stringify(userProfile)));
     }
 
     async grantEpisodeReward(reward: number): Promise<Profile> {
-        let updatedProfile: Profile | null = null;
-        mockDb.write(db => {
-            db.profile.cred += reward;
-            updatedProfile = db.profile;
-        });
-        return Promise.resolve(JSON.parse(JSON.stringify(updatedProfile!)));
+        userProfile.cred += reward;
+        return this.getProfile();
     }
 
     async getStrategies(): Promise<Strategy[]> {
-        const db = mockDb.read();
-        return Promise.resolve(db.strategies);
+        return Promise.resolve(JSON.parse(JSON.stringify(strategies)));
     }
 
     async createStrategy(strategy: Omit<Strategy, 'id'>): Promise<Strategy> {
@@ -69,15 +129,12 @@ class MockApiService {
             ...strategy,
             id: `strat${Date.now()}`
         };
-        mockDb.write(db => {
-            db.strategies.push(newStrategy);
-        });
+        strategies.push(newStrategy);
         return Promise.resolve(newStrategy);
     }
 
     async getStoreItems(): Promise<Item[]> {
-        const db = mockDb.read();
-        return Promise.resolve(db.items);
+        return Promise.resolve(JSON.parse(JSON.stringify(storeItems)));
     }
 
     async createItem(item: Omit<Item, 'id'>): Promise<Item> {
@@ -85,134 +142,20 @@ class MockApiService {
             ...item,
             id: `item${Date.now()}`
         };
-        mockDb.write(db => {
-            db.items.push(newItem);
-        });
+        storeItems.push(newItem);
         return Promise.resolve(newItem);
     }
 
     async purchaseItem(itemId: string): Promise<{profile: Profile, success: boolean}> {
-        let success = false;
-        let finalProfile: Profile | null = null;
+        const item = storeItems.find(i => i.id === itemId);
+        if (!item) return { profile: await this.getProfile(), success: false };
+        if (userProfile.cred < item.price) return { profile: await this.getProfile(), success: false };
+        if (userProfile.inventory.includes(itemId)) return { profile: await this.getProfile(), success: false };
 
-        mockDb.write(db => {
-            const item = db.items.find(i => i.id === itemId);
-            if (!item || db.profile.cred < item.price || db.profile.inventory.includes(itemId)) {
-                success = false;
-            } else {
-                db.profile.cred -= item.price;
-                db.profile.inventory.push(itemId);
-                success = true;
-            }
-            finalProfile = db.profile;
-        });
+        userProfile.cred -= item.price;
+        userProfile.inventory.push(itemId);
         
-        return { profile: JSON.parse(JSON.stringify(finalProfile!)), success };
-    }
-
-    async getDrills(): Promise<Drill[]> {
-        const db = mockDb.read();
-        return Promise.resolve(db.drills);
-    }
-
-    async createDrill(drill: Omit<Drill, 'id'>): Promise<Drill> {
-        const newDrill: Drill = {
-            ...drill,
-            id: `drill${Date.now()}`
-        };
-        mockDb.write(db => {
-            db.drills.push(newDrill);
-        });
-        return Promise.resolve(newDrill);
-    }
-
-    async saveCoachFeedback(feedback: Omit<CoachFeedback, 'sessionId'>): Promise<CoachFeedback> {
-        const newFeedback: CoachFeedback = {
-            ...feedback,
-            sessionId: `sess${Date.now()}`
-        };
-        mockDb.write(db => {
-            db.coachFeedback.push(newFeedback);
-        });
-        return Promise.resolve(newFeedback);
-    }
-
-    async getVisualAssets(type?: VisualAsset['type']): Promise<VisualAsset[]> {
-        const db = mockDb.read();
-        if (type) {
-            const assets = db.visualAssets.filter(asset => asset.type === type);
-            return Promise.resolve(assets);
-        }
-        return Promise.resolve(db.visualAssets);
-    }
-
-    async createVisualAsset(assetData: Omit<VisualAsset, 'id'>): Promise<VisualAsset> {
-        const newAsset: VisualAsset = {
-            ...assetData,
-            id: `vis${Date.now()}`
-        };
-        mockDb.write(db => {
-            db.visualAssets.push(newAsset);
-        });
-        return Promise.resolve(newAsset);
-    }
-
-    async getThemes(): Promise<Theme[]> {
-        const db = mockDb.read();
-        return Promise.resolve(db.themes);
-    }
-
-    async createTheme(theme: Omit<Theme, 'id'>): Promise<Theme> {
-        const newTheme: Theme = {
-            ...theme,
-            id: `theme${Date.now()}`
-        };
-        mockDb.write(db => {
-            db.themes.push(newTheme);
-        });
-        return Promise.resolve(newTheme);
-    }
-
-    async getAgentLessons(): Promise<AgentLesson[]> {
-        const db = mockDb.read();
-        return Promise.resolve(db.agentLessons);
-    }
-
-    async createAgentLesson(lesson: Omit<AgentLesson, 'id'>): Promise<AgentLesson> {
-        const newLesson: AgentLesson = {
-            ...lesson,
-            id: `lesson${Date.now()}`
-        };
-        mockDb.write(db => {
-            db.agentLessons.push(newLesson);
-        });
-        return Promise.resolve(newLesson);
-    }
-    
-    async getCampaigns(): Promise<Campaign[]> {
-        const db = mockDb.read();
-        return Promise.resolve(db.campaigns);
-    }
-
-    async createCampaign(campaign: Omit<Campaign, 'id'>): Promise<Campaign> {
-        const newCampaign: Campaign = {
-            ...campaign,
-            id: `camp${Date.now()}`
-        };
-        mockDb.write(db => {
-            db.campaigns.push(newCampaign);
-        });
-        return Promise.resolve(newCampaign);
-    }
-
-    async updateCampaign(campaign: Campaign): Promise<Campaign> {
-        mockDb.write(db => {
-            const index = db.campaigns.findIndex(c => c.id === campaign.id);
-            if (index !== -1) {
-                db.campaigns[index] = campaign;
-            }
-        });
-        return Promise.resolve(campaign);
+        return { profile: await this.getProfile(), success: true };
     }
 }
 

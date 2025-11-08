@@ -1,23 +1,35 @@
-import React, { useState } from 'react';
-import { GameScreen, Item } from '../types';
+import React, { useState, useEffect } from 'react';
+import { GameScreen, Item, Profile } from '../types';
+import { mockApi } from '../services/mockApi';
 import { ArrowLeftIcon, LoadingIcon, CheckCircleIcon } from './Icons';
-import { useData } from '../context/DataContext';
 
 interface MarketScreenProps {
     onNavigate: (screen: GameScreen) => void;
 }
 
 export const MarketScreen: React.FC<MarketScreenProps> = ({ onNavigate }) => {
-    const { items, profile, isLoading, purchaseItem } = useData();
-    const [purchasingId, setPurchasingId] = useState<string | null>(null);
+    const [items, setItems] = useState<Item[]>([]);
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const handlePurchase = async (itemId: string) => {
-        setPurchasingId(itemId);
-        await purchaseItem(itemId);
-        setPurchasingId(null);
+    const fetchData = async () => {
+        const itemsData = await mockApi.getStoreItems();
+        const profileData = await mockApi.getProfile();
+        setItems(itemsData);
+        setProfile(profileData);
+        setLoading(false);
     };
 
-    if (isLoading || !profile) {
+    useEffect(() => {
+        fetchData();
+    }, []);
+    
+    const handlePurchase = async (itemId: string) => {
+        const { profile: updatedProfile } = await mockApi.purchaseItem(itemId);
+        setProfile(updatedProfile);
+    };
+
+    if (loading || !profile) {
         return <div className="flex items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Loading Market...</span></div>;
     }
 
@@ -41,7 +53,6 @@ export const MarketScreen: React.FC<MarketScreenProps> = ({ onNavigate }) => {
                 {items.map(item => {
                     const canAfford = profile.cred >= item.price;
                     const isOwned = profile.inventory.includes(item.id);
-                    const isBeingPurchased = purchasingId === item.id;
                     return (
                         <div key={item.id} className={`bg-gray-800/50 rounded-lg p-5 flex flex-col justify-between border-2 ${isOwned ? 'border-green-500/50' : 'border-gray-700'}`}>
                             <div>
@@ -57,10 +68,10 @@ export const MarketScreen: React.FC<MarketScreenProps> = ({ onNavigate }) => {
                                 ) : (
                                      <button
                                         onClick={() => handlePurchase(item.id)}
-                                        disabled={!canAfford || isBeingPurchased}
-                                        className="px-4 py-2 font-semibold bg-cyan-500 text-gray-900 rounded-md hover:bg-cyan-400 transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[80px]"
+                                        disabled={!canAfford}
+                                        className="px-4 py-2 font-semibold bg-cyan-500 text-gray-900 rounded-md hover:bg-cyan-400 transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
                                     >
-                                        {isBeingPurchased ? <LoadingIcon size={5} /> : 'Buy'}
+                                        Buy
                                     </button>
                                 )}
                             </div>

@@ -1,16 +1,27 @@
-import React from 'react';
-import { GameScreen } from '../types';
+import React, { useState, useEffect } from 'react';
+import { GameScreen, AiCharacter } from '../types';
+import { mockApi } from '../services/mockApi';
 import { ArrowLeftIcon, LoadingIcon } from './Icons';
-import { useData } from '../context/DataContext';
 
 interface ContactsScreenProps {
     onNavigate: (screen: GameScreen) => void;
 }
 
 export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onNavigate }) => {
-    const { characters, isLoading } = useData();
+    const [characters, setCharacters] = useState<AiCharacter[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    if (isLoading) {
+    useEffect(() => {
+        const fetchCharacters = async () => {
+            setLoading(true);
+            const data = await mockApi.getCharacters();
+            setCharacters(data);
+            setLoading(false);
+        };
+        fetchCharacters();
+    }, []);
+
+    if (loading) {
         return <div className="flex items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Loading Contacts...</span></div>;
     }
 
