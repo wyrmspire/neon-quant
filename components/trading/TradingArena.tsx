@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Episode, Session, AiCharacter } from '../../types';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Episode, Session, AiCharacter, Drill as ContentDrill } from '../../types';
 import { Timeframe } from '../../ports/charting';
 import { LoadingIcon } from '../Icons';
 import { useGameCandlestickData } from '../../hooks/useGameCandles';
 import { useGameIndicators } from '../../hooks/useGameIndicators';
-import { Drill, Phase } from '../../game/director';
+import { Phase, Drill as DirectorDrill } from '../../game/director';
 import { ReplayDrill } from '../../game/drills/replay-drill';
 import { mockCoach } from '../../services/mockCoach';
 import { mockJournal } from '../../services/mockJournal';
@@ -15,10 +15,12 @@ import { TradeDashboard } from './TradeDashboard';
 import { TradeControls } from './TradeControls';
 import { CoachsCorner } from './CoachsCorner';
 import { PhaseOverlay } from './PhaseOverlay';
+import { CharacterDialogueModal } from '../CharacterDialogueModal';
 import { useData } from '../../context/DataContext';
 
 interface TradingArenaProps {
-    episode: Episode; 
+    episode?: Episode;
+    drill?: ContentDrill;
     onComplete: (session: Session) => void;
 }
 
@@ -41,14 +43,28 @@ const TimeframeSelector: React.FC<{ selected: Timeframe, onSelect: (tf: Timefram
     );
 };
 
-export const TradingArena: React.FC<TradingArenaProps> = ({ episode, onComplete }) => {
-    const drill = ReplayDrill; // Use the structured drill
-    const director = useMemo(() => new Director(drill), [drill]);
+export const TradingArena: React.FC<TradingArenaProps> = ({ episode, drill, onComplete }) => {
+    const { characters } = useData();
+    // Convert the ContentDrill prop into a DirectorDrill, ensuring activeDrill is always of the correct type for the game director.
+    // Use the passed drill or a default replay drill for episodes.
+    const activeDrill: DirectorDrill = useMemo(() => {
+        if (drill) {
+            // Create a DirectorDrill from the ContentDrill, using ReplayDrill as a template for phases/scoring.
+            return {
+                ...ReplayDrill,
+                id: drill.id,
+                symbol: drill.scenarioSeed, // Map content seed to director symbol
+            };
+        }
+        return ReplayDrill;
+    }, [drill]);
+    const director = useMemo(() => new Director(activeDrill), [activeDrill]);
 
     const [phase, setPhase] = useState<Phase | null>(null);
     const [timeLeft, setTimeLeft] = useState(0);
     const [currentTip, setCurrentTip] = useState<string | null>(null);
     const [candleIndex, setCandleIndex] = useState(0);
+    const [dialogue, setDialogue] = useState<{ character: AiCharacter; message: string; } | null>(null);
 
     const { 
         position, closedTrades, ruleHits, journalNotes, score,
@@ -56,10 +72,18 @@ export const TradingArena: React.FC<TradingArenaProps> = ({ episode, onComplete 
         calculateUnrealizedPnl, calculateRealizedPnl, addRuleHit
     } = useTradingSession();
     
-    const [timeframe, setTimeframe] = useState<Timeframe>(drill.timeframe);
-    const anchorDate = useMemo(() => new Date(drill.anchorDate), [drill.anchorDate]);
+    // Determine context from episode or drill
+    const sessionContext = useMemo(() => ({
+        id: episode?.id || drill?.id || 'unknown',
+        title: episode?.title || drill?.name || 'Trading Session',
+        seed: episode?.seed || drill?.scenarioSeed || 'RANGE:NORMAL',
+        anchorDate: new Date(activeDrill.anchorDate),
+        timeframe: activeDrill.timeframe,
+    }), [episode, drill, activeDrill]);
 
-    const { allCandleData, isLoading: isLoadingCandles } = useGameCandlestickData(episode.seed, anchorDate);
+    const [timeframe, setTimeframe] = useState<Timeframe>(sessionContext.timeframe);
+    
+    const { allCandleData, isLoading: isLoadingCandles } = useGameCandlestickData(sessionContext.seed, sessionContext.anchorDate);
     const { indicators } = useGameIndicators(allCandleData, timeframe);
     
     const replayCandles = allCandleData['1m'];
@@ -68,49 +92,20 @@ export const TradingArena: React.FC<TradingArenaProps> = ({ episode, onComplete 
     const handleComplete = () => {
         const finalPnl = closedTrades.reduce((acc, trade) => acc + (trade.pnl || 0), 0);
         const session: Session = {
-            episodeId: episode.id,
+            episodeId: sessionContext.id,
             closedTrades: closedTrades,
             finalPnl: finalPnl,
         };
         onComplete(session);
     };
     
-    useEffect(() => {
-        director.onPhaseChange = (newPhase) => setPhase(newPhase);
-        director.onTick = (time) => {
-             setTimeLeft(time);
-             const playPhase = drill.phases.find(p => p.id === 'play');
-             if (playPhase?.durationSec && replayCandles.length > 0) {
-                const totalDuration = playPhase.durationSec;
-                const elapsedSeconds = totalDuration - time;
-                const progress = elapsedSeconds / totalDuration;
-
-                setCandleIndex(Math.min(Math.floor(progress * replayCandles.length), replayCandles.length -1));
-                
-                // Evaluate coach tick
-                const coachResult = mockCoach.evaluateTick({ price: currentPrice, position, indicators });
-                if (coachResult.tip) setCurrentTip(coachResult.tip);
-                if (coachResult.ruleHit) addRuleHit(coachResult.ruleHit);
-             }
-        };
-        director.onTip = (tip) => setCurrentTip(tip);
-        
-        if (!isLoadingCandles) {
-            director.start();
-        }
-
-        return () => director.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [director, isLoadingCandles, replayCandles.length, currentPrice, position, indicators]);
-
-
     const handleFinishReview = async () => {
         const pnl = parseFloat(calculateRealizedPnl());
-        const calculatedScore = drill.scoring.rubric({ pnl, ruleHits });
+        const calculatedScore = activeDrill.scoring.rubric({ pnl, ruleHits });
         setScore(calculatedScore);
         
         await mockJournal.save({
-            drillId: drill.id,
+            drillId: activeDrill.id,
             pnl,
             score: calculatedScore,
             notes: journalNotes,
@@ -119,13 +114,75 @@ export const TradingArena: React.FC<TradingArenaProps> = ({ episode, onComplete 
 
         director.advancePhase();
     };
-    
+
+    const stateRef = useRef({
+        position,
+        indicators,
+        currentPrice,
+        addRuleHit,
+        characters,
+    });
+    useEffect(() => {
+        stateRef.current = { position, indicators, currentPrice, addRuleHit, characters };
+    });
+
+    useEffect(() => {
+        director.onPhaseChange = (newPhase) => {
+            setPhase(newPhase);
+
+            if (newPhase.id === 'play' && episode) { // Only show dialogue in episodes
+                setTimeout(() => {
+                    const { characters } = stateRef.current;
+                    const rival = characters.find(c => c.id === 'rival');
+                    if(rival) {
+                        setDialogue({
+                            character: rival,
+                            message: "Heard you were back in the arena. Try not to lose it all in one go."
+                        });
+                    }
+                }, 8000);
+            }
+        };
+
+        director.onTick = (time) => {
+             setTimeLeft(time);
+             const playPhase = activeDrill.phases.find(p => p.id === 'play');
+             if (playPhase?.durationSec && replayCandles.length > 0) {
+                const totalDuration = playPhase.durationSec;
+                const elapsedSeconds = totalDuration - time;
+                const progress = elapsedSeconds / totalDuration;
+
+                setCandleIndex(Math.min(Math.floor(progress * replayCandles.length), replayCandles.length - 1));
+                
+                const { currentPrice, position, indicators, addRuleHit } = stateRef.current;
+                const coachResult = mockCoach.evaluateTick({ price: currentPrice, position, indicators });
+                if (coachResult.tip) setCurrentTip(coachResult.tip);
+                if (coachResult.ruleHit) addRuleHit(coachResult.ruleHit);
+             }
+        };
+        director.onTip = (tip) => setCurrentTip(tip);
+        
+        if (!isLoadingCandles && replayCandles.length > 0) {
+            director.start();
+        }
+
+        return () => director.stop();
+    }, [director, activeDrill.phases, isLoadingCandles, replayCandles.length, episode]);
+
+
     if (isLoadingCandles) {
         return <div className="flex flex-col items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Loading Market Data...</span></div>;
     }
 
     return (
         <div className="p-6 h-full flex flex-col">
+            {dialogue && (
+                <CharacterDialogueModal 
+                    character={dialogue.character}
+                    message={dialogue.message}
+                    onClose={() => setDialogue(null)}
+                />
+            )}
             <PhaseOverlay 
                 phase={phase}
                 currentTip={currentTip}
@@ -137,7 +194,7 @@ export const TradingArena: React.FC<TradingArenaProps> = ({ episode, onComplete 
                 onComplete={handleComplete}
             />
             <header className="mb-4">
-                <h1 className="text-3xl font-bold text-white">{episode.title}</h1>
+                <h1 className="text-3xl font-bold text-white">{sessionContext.title}</h1>
                 <p className="text-gray-400">{phase?.title || 'Loading...'}</p>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 flex-1">

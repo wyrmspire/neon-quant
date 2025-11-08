@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { VisualAsset } from '../types';
-import { geminiService } from '../services/geminiService';
-import { mockApi } from '../services/mockApi';
+import { agentOrchestrator } from '../services/agentOrchestrator';
 import { LoadingIcon } from './Icons';
 import { useData } from '../context/DataContext';
 
 export const AvatarStudio: React.FC = () => {
     const [prompt, setPrompt] = useState('');
-    const [assetName, setAssetName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+    const [generatedAsset, setGeneratedAsset] = useState<VisualAsset | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const { visualAssets, addCreatedItem } = useData();
@@ -18,13 +16,13 @@ export const AvatarStudio: React.FC = () => {
     const handleGenerate = async () => {
         if (!prompt.trim() || isLoading) return;
         setIsLoading(true);
-        setGeneratedImage(null);
+        setGeneratedAsset(null);
         setError(null);
         try {
             const fullPrompt = `A square character portrait for a trading game. Neon-cyberpunk, graphic novel aesthetic. Centered bust shot. Style is vibrant and energetic. Character: ${prompt}`;
-            const imageUrl = await geminiService.generateImage(fullPrompt, '1:1');
-            setGeneratedImage(imageUrl);
-            setAssetName(prompt.slice(0, 30)); // Set a default name based on the prompt
+            const newAsset = await agentOrchestrator.createVisualAsset(prompt, fullPrompt, 'avatar');
+            addCreatedItem(newAsset, 'visualAsset');
+            setGeneratedAsset(newAsset);
         } catch (e) {
             setError(e instanceof Error ? e.message : 'An unknown error occurred during image generation.');
         } finally {
@@ -32,19 +30,10 @@ export const AvatarStudio: React.FC = () => {
         }
     };
     
-    const handleSave = async () => {
-        if (!generatedImage || !assetName.trim()) return;
-        const newAssetData: Omit<VisualAsset, 'id'> = {
-            type: 'avatar',
-            name: assetName.trim(),
-            prompt: prompt,
-            dataUrl: generatedImage,
-        };
-        const savedAsset = await mockApi.createVisualAsset(newAssetData);
-        addCreatedItem(savedAsset, 'visualAsset'); // Update context
-        setGeneratedImage(null);
+    const handleClear = () => {
+        setGeneratedAsset(null);
         setPrompt('');
-        setAssetName('');
+        setError(null);
     };
 
     return (
@@ -72,26 +61,16 @@ export const AvatarStudio: React.FC = () => {
                             />
                         </div>
                         <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-900 bg-cyan-400 hover:bg-cyan-300 disabled:bg-gray-600 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                            {isLoading ? <LoadingIcon size={5} /> : 'Generate'}
+                            {isLoading ? <LoadingIcon size={5} /> : 'Generate & Save'}
                         </button>
                     </div>
                     
                     <div className="mt-6 border-t border-gray-700 pt-6 flex-1 flex flex-col justify-center items-center">
-                        {generatedImage ? (
+                        {generatedAsset ? (
                             <div className="w-full text-center animate-fade-in">
-                                <h3 className="font-semibold text-lg text-white mb-2">Generated Image</h3>
-                                <img src={generatedImage} alt="Generated avatar" className="w-full aspect-square rounded-lg object-cover border-2 border-cyan-400" />
-                                <div className="mt-4">
-                                    <label htmlFor="assetName" className="block text-sm font-medium text-gray-300 mb-1">Asset Name</label>
-                                    <input
-                                        type="text"
-                                        id="assetName"
-                                        value={assetName}
-                                        onChange={(e) => setAssetName(e.target.value)}
-                                        className="w-full p-2 text-white bg-gray-700 border border-gray-600 rounded-md"
-                                    />
-                                </div>
-                                <button onClick={handleSave} className="w-full mt-2 py-2 bg-green-600 font-bold rounded-md hover:bg-green-500">Save to Library</button>
+                                <h3 className="font-semibold text-lg text-white mb-2">Generated: {generatedAsset.name}</h3>
+                                <img src={generatedAsset.dataUrl} alt={generatedAsset.name} className="w-full aspect-square rounded-lg object-cover border-2 border-cyan-400" />
+                                <button onClick={handleClear} className="w-full mt-4 py-2 bg-gray-600 font-bold rounded-md hover:bg-gray-500">Clear</button>
                             </div>
                         ) : (
                             <div className="text-center text-gray-500">

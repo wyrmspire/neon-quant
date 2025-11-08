@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Episode, Strategy, AiCharacter, Item, AgentLog, Drill, Session, CoachFeedback, Theme, AgentLesson } from '../types';
+import { Episode, Strategy, AiCharacter, Item, AgentLog, Drill, Session, CoachFeedback, Theme, AgentLesson, Campaign } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -132,6 +132,36 @@ const visualAssetSchema = {
         imagePrompt: { type: Type.STRING, description: 'A detailed, descriptive prompt for an AI image generator to create the asset. This should be much more detailed than the user\'s original request.' }
     },
     required: ['name', 'imagePrompt']
+};
+
+const campaignSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'A catchy, thematic title for the entire campaign.' },
+        description: { type: Type.STRING, description: 'A brief, 1-2 sentence synopsis of the campaign\'s story arc.' },
+        initialNodes: {
+            type: Type.ARRAY,
+            items: { 
+                type: Type.OBJECT,
+                properties: {
+                    title: { type: Type.STRING, description: 'The title of this story beat or node.' },
+                    content: { type: Type.STRING, description: 'The narrative text for this story node.' },
+                },
+                required: ['title', 'content'],
+            },
+            description: 'A list of 2-4 initial story nodes to start the campaign.'
+        }
+    },
+    required: ['title', 'description', 'initialNodes']
+};
+
+const storyNodeSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'A short, engaging title for this story beat or node.' },
+        content: { type: Type.STRING, description: 'The narrative text for this story node. This should advance the plot or provide character development.' },
+    },
+    required: ['title', 'content'],
 };
 
 
@@ -407,6 +437,47 @@ Your role is to answer the user's questions about the game, its architecture, yo
         } catch (error) {
             console.error("Error generating chat response:", error);
             throw new Error("Failed to get a response from Gemini.");
+        }
+    }
+    
+    async generateCampaignOutline(prompt: string): Promise<Omit<Campaign, 'id' | 'nodes' | 'links'> & { initialNodes: {title: string, content: string}[] }> {
+        try {
+            const result = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: `You are a creative storyteller and game designer for 'Project Neon Quant'. Your task is to generate a campaign outline based on the user's request. The outline must be a valid JSON object matching the provided schema, including a title, a short description, and 2-4 starter story nodes.
+User Request: "${prompt}"
+
+Generate a compelling campaign outline that fits this request. The story nodes should form the beginning of an interesting narrative arc.`,
+                config: {
+                    responseMimeType: 'application/json',
+                    responseSchema: campaignSchema,
+                },
+            });
+
+            const jsonString = result.text;
+            return JSON.parse(jsonString) as Omit<Campaign, 'id' | 'nodes' | 'links'> & { initialNodes: {title: string, content: string}[] };
+        } catch (error) {
+            console.error("Error generating campaign outline:", error);
+            throw new Error("Failed to generate campaign from Gemini.");
+        }
+    }
+
+    async generateStoryNodeContent(prompt: string): Promise<{ title: string, content: string }> {
+        try {
+             const result = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: `You are a creative storyteller and game designer. Generate a single story node based on the user's request. The output must be a valid JSON object matching the provided schema.
+User Request: "${prompt}"`,
+                config: {
+                    responseMimeType: 'application/json',
+                    responseSchema: storyNodeSchema,
+                },
+            });
+            const jsonString = result.text;
+            return JSON.parse(jsonString) as { title: string, content: string };
+        } catch (error) {
+            console.error("Error generating story node:", error);
+            throw new Error("Failed to generate story node from Gemini.");
         }
     }
 

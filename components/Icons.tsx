@@ -224,5 +224,17 @@ export const TestTubeIcon = createIcon(
     </>
 );
 
+export const GlitchIcon = createIcon(<path d="M10 3L6 8l4 5M14 21l4-5-4-5M18 8h-7M13 16H6" />);
+export const HoloCardIcon = createIcon(<><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></>);
+export const MarketPulseIcon = createIcon(<polyline points="2 12 5 12 8 4 12 20 16 4 19 12 22 12" />);
+export const GridIcon = createIcon(<><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /><line x1="9" y1="3" x2="9" y2="21" /><line x1="15" y1="3" x2="15" y2="21" /></>);
+export const NeonButtonIcon = createIcon(<><rect x="3" y="7" width="18" height="10" rx="2" /><path d="M3 12h-2" /><path d="M21 12h2" /><path d="M12 7V5" /><path d="M12 17v2" /></>);
+export const ScanlinesIcon = createIcon(<><path d="M2 6h20" /><path d="M2 9h20" /><path d="M2 12h20" /><path d="M2 15h20" /><path d="M2 18h20" /></>);
+export const TerminalIcon = createIcon(<><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></>);
+export const LoaderBarIcon = createIcon(<><rect x="2" y="6" width="20" height="12" rx="2" /><path d="M6 12h4" /></>);
+export const ParallaxIcon = createIcon(<><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M4 16V4h12" /></>);
+export const DataNodesIcon = createIcon(<><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" /></>);
+export const CampaignIcon = createIcon(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></>);
+
 // This is used as AgentAvatarIcon
 export const AgentAvatarIcon = AgentIcon;

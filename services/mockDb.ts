@@ -1,5 +1,5 @@
 // Fix: Corrected import path for types and added AgentLesson.
-import { Episode, AiCharacter, Profile, Strategy, Item, Drill, CoachFeedback, VisualAsset, Theme, JournalEntry, AgentLesson } from '../types';
+import { Episode, AiCharacter, Profile, Strategy, Item, Drill, CoachFeedback, VisualAsset, Theme, JournalEntry, AgentLesson, Campaign } from '../types';
 
 // Define the structure of our database
 export interface Db {
@@ -13,8 +13,8 @@ export interface Db {
   visualAssets: VisualAsset[];
   themes: Theme[];
   journal: JournalEntry[];
-  // Fix: Added agentLessons to the database schema.
   agentLessons: AgentLesson[];
+  campaigns: Campaign[];
 }
 
 // Define the key for localStorage
@@ -107,8 +107,21 @@ const defaultDb: Db = {
         }
     ],
     journal: [],
-    // Fix: Added agentLessons to the default database object.
     agentLessons: [],
+    campaigns: [
+        {
+            id: 'welcome_campaign',
+            title: "Welcome to Neon Quant",
+            description: "A starter campaign to introduce you to the core concepts of the game.",
+            nodes: [
+                { id: 'node1', type: 'story', title: 'The Invitation', content: "You receive a cryptic message on your terminal. It's an invitation to an exclusive trading league known only as 'Neon Quant'. This is your chance to make a name for yourself.", position: { x: 50, y: 100 } },
+                { id: 'node2', type: 'story', title: 'First Contact', content: "Your first contact is Kai, a veteran trader. He warns you that the markets are a battlefield, and process is your only armor.", position: { x: 300, y: 100 } },
+            ],
+            links: [
+                { id: 'link1', sourceId: 'node1', targetId: 'node2' }
+            ]
+        }
+    ]
 };
 
 // In-memory cache for the database to avoid repeated, expensive localStorage reads.

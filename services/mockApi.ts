@@ -1,5 +1,4 @@
-// Fix: Corrected import path for types and added AgentLesson.
-import { Episode, AiCharacter, Profile, Strategy, Item, Drill, CoachFeedback, VisualAsset, Theme, AgentLesson } from '../types';
+import { Episode, AiCharacter, Profile, Strategy, Item, Drill, CoachFeedback, VisualAsset, Theme, AgentLesson, Campaign } from '../types';
 import { mockDb } from './mockDb';
 
 class MockApiService {
@@ -138,10 +137,13 @@ class MockApiService {
         return Promise.resolve(newFeedback);
     }
 
-    async getVisualAssets(type: VisualAsset['type']): Promise<VisualAsset[]> {
+    async getVisualAssets(type?: VisualAsset['type']): Promise<VisualAsset[]> {
         const db = mockDb.read();
-        const assets = db.visualAssets.filter(asset => asset.type === type);
-        return Promise.resolve(assets);
+        if (type) {
+            const assets = db.visualAssets.filter(asset => asset.type === type);
+            return Promise.resolve(assets);
+        }
+        return Promise.resolve(db.visualAssets);
     }
 
     async createVisualAsset(assetData: Omit<VisualAsset, 'id'>): Promise<VisualAsset> {
@@ -171,13 +173,11 @@ class MockApiService {
         return Promise.resolve(newTheme);
     }
 
-    // Fix: Added missing getAgentLessons method.
     async getAgentLessons(): Promise<AgentLesson[]> {
         const db = mockDb.read();
         return Promise.resolve(db.agentLessons);
     }
 
-    // Fix: Added missing createAgentLesson method.
     async createAgentLesson(lesson: Omit<AgentLesson, 'id'>): Promise<AgentLesson> {
         const newLesson: AgentLesson = {
             ...lesson,
@@ -187,6 +187,32 @@ class MockApiService {
             db.agentLessons.push(newLesson);
         });
         return Promise.resolve(newLesson);
+    }
+    
+    async getCampaigns(): Promise<Campaign[]> {
+        const db = mockDb.read();
+        return Promise.resolve(db.campaigns);
+    }
+
+    async createCampaign(campaign: Omit<Campaign, 'id'>): Promise<Campaign> {
+        const newCampaign: Campaign = {
+            ...campaign,
+            id: `camp${Date.now()}`
+        };
+        mockDb.write(db => {
+            db.campaigns.push(newCampaign);
+        });
+        return Promise.resolve(newCampaign);
+    }
+
+    async updateCampaign(campaign: Campaign): Promise<Campaign> {
+        mockDb.write(db => {
+            const index = db.campaigns.findIndex(c => c.id === campaign.id);
+            if (index !== -1) {
+                db.campaigns[index] = campaign;
+            }
+        });
+        return Promise.resolve(campaign);
     }
 }
 

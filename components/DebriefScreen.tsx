@@ -1,14 +1,61 @@
-import React from 'react';
-import { Session, CoachFeedback } from '../types';
-import { CheckCircleIcon, XCircleIcon, InfoIcon } from './Icons';
+import React, { useState, useEffect } from 'react';
+import { Session, CoachFeedback, Episode } from '../types';
+import { geminiService } from '../services/geminiService';
+import { mockApi } from '../services/mockApi';
+import { CheckCircleIcon, XCircleIcon, InfoIcon, LoadingIcon, VizLabIcon } from './Icons';
 
 interface DebriefScreenProps {
     session: Session;
-    feedback: CoachFeedback;
+    episode: Episode;
     onAcknowledge: () => void;
 }
 
-export const DebriefScreen: React.FC<DebriefScreenProps> = ({ session, feedback, onAcknowledge }) => {
+export const DebriefScreen: React.FC<DebriefScreenProps> = ({ session, episode, onAcknowledge }) => {
+    const [feedback, setFeedback] = useState<CoachFeedback | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const generateFeedback = async () => {
+            setIsLoading(true);
+            try {
+                const feedbackData = await geminiService.generateCoachFeedback(session, episode);
+                const savedFeedback = await mockApi.saveCoachFeedback(feedbackData);
+                setFeedback(savedFeedback);
+            } catch (error) {
+                console.error("Failed to generate coach feedback:", error);
+                // Set some default feedback on error
+                setFeedback({
+                    sessionId: `err_${Date.now()}`,
+                    summary: "Could not retrieve feedback from the AI coach at this time.",
+                    strengths: [],
+                    improvements: []
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        generateFeedback();
+    }, [session, episode]);
+
+    const handleGenerateTheme = () => {
+        // Placeholder for the "Theme Intelligence" feature.
+        // This would trigger a call to the agent to create a new theme.
+        console.log("Feature coming soon: Generate a visual theme from this session!");
+        alert("Feature coming soon: Generate a visual theme from this session!");
+    };
+
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-cyan-400">
+                <LoadingIcon size={12} /> 
+                <span className="ml-4 text-xl">Generating AI Coach Debrief...</span>
+            </div>
+        );
+    }
+    
+    if (!feedback) return null; // Or some other error state
+
     const finalPnl = session.finalPnl;
     const isProfitable = finalPnl >= 0;
 
@@ -58,10 +105,17 @@ export const DebriefScreen: React.FC<DebriefScreenProps> = ({ session, feedback,
                      </div>
                 )}
 
-                <div className="text-center mt-8">
+                <div className="grid grid-cols-2 gap-4 text-center mt-8">
+                    <button
+                        onClick={handleGenerateTheme}
+                        className="w-full px-6 py-3 bg-purple-600 text-white font-semibold rounded-md hover:bg-purple-500 transition-colors shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2"
+                        title="Generate a UI theme based on this session's outcome"
+                    >
+                        <VizLabIcon /> Generate Theme
+                    </button>
                     <button
                         onClick={onAcknowledge}
-                        className="px-8 py-3 bg-cyan-500 text-gray-900 font-semibold rounded-md hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
+                        className="w-full px-8 py-3 bg-cyan-500 text-gray-900 font-semibold rounded-md hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
                     >
                         Return to Hub
                     </button>
@@ -69,8 +123,8 @@ export const DebriefScreen: React.FC<DebriefScreenProps> = ({ session, feedback,
             </div>
              <style>{`
                 @keyframes fade-in {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 .animate-fade-in {
                     animation: fade-in 0.5s ease-in-out forwards;

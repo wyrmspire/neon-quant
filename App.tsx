@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AgentView } from './components/agent/AgentView';
 import { GameView } from './components/GameView';
 import { VizLabView } from './components/VizLabView';
+import { CampaignView } from './components/CampaignView';
 import { AppMode, GameScreen, VizLabTool, AppStateSetters } from './types';
-import { AgentIcon, GamepadIcon, VizLabIcon, TestTubeIcon } from './components/Icons';
+import { AgentIcon, GamepadIcon, VizLabIcon, TestTubeIcon, CampaignIcon } from './components/Icons';
 import { DevTestRunnerModal } from './components/DevTestRunnerModal';
 import { DataProvider } from './context/DataContext';
 import { SmokeTestRunner } from './components/dev/SmokeTestRunner';
 
 const App: React.FC = () => {
-    const [mode, setMode] = useState<AppMode>('agent');
+    const [mode, setMode] = useState<AppMode>('campaign');
     const [gameScreen, setGameScreen] = useState<GameScreen>('hub');
     const [vizLabTool, setVizLabTool] = useState<VizLabTool>('avatarStudio');
     
@@ -41,8 +42,10 @@ const App: React.FC = () => {
                 return <GameView screen={gameScreen} setScreen={setGameScreen} />;
             case 'vizlab':
                 return <VizLabView tool={vizLabTool} setTool={setVizLabTool} />;
+            case 'campaign':
+                return <CampaignView />;
             default:
-                return <AgentView />;
+                return <CampaignView />;
         }
     };
 
@@ -67,7 +70,16 @@ const App: React.FC = () => {
         );
     };
     
-    const appStateSetters: AppStateSetters = { setMode, setGameScreen, setVizLabTool };
+    const onCompleteSmokeTest = useCallback(() => {
+        setIsSmokeTestRunning(false);
+    }, []);
+
+    const appStateSetters = useMemo<AppStateSetters>(() => ({
+        setMode,
+        setGameScreen,
+        setVizLabTool,
+    }), [setMode, setGameScreen, setVizLabTool]);
+
 
     return (
         <DataProvider>
@@ -75,7 +87,7 @@ const App: React.FC = () => {
                 {isSmokeTestRunning && (
                     <SmokeTestRunner 
                         setters={appStateSetters} 
-                        onComplete={() => setIsSmokeTestRunning(false)} 
+                        onComplete={onCompleteSmokeTest} 
                     />
                 )}
                 {isTestRunnerVisible && (
@@ -96,6 +108,12 @@ const App: React.FC = () => {
                     </div>
                     <nav className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
+                             <NavButton
+                                label="Campaign Mode"
+                                icon={<CampaignIcon />}
+                                isActive={mode === 'campaign'}
+                                onClick={() => setMode('campaign')}
+                            />
                             <NavButton
                                 label="Agent Mode"
                                 icon={<AgentIcon />}

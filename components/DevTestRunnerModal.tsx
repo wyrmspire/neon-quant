@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { geminiService } from '../../services/geminiService';
 import { mockApi } from '../../services/mockApi';
 import { MockChartData } from '../../services/mockCharting';
+import { agentOrchestrator } from '../../services/agentOrchestrator';
 import { LoadingIcon, CheckCircleIcon, XCircleIcon, AgentIcon } from './Icons';
 
 type TestStatus = 'pending' | 'running' | 'success' | 'failure';
@@ -100,7 +101,19 @@ export const DevTestRunnerModal: React.FC<{ onClose: () => void; onStartSmokeTes
         }
         await sleep(500);
 
-        // Test 4: Self-Correction Loop
+        // Test 4: Agent Orchestrator for Campaign Creation
+        addLog('Running: Agent Orchestrator Test (Campaign Gen)', 'running');
+        try {
+            // The orchestrator function requires an addCreatedItem callback. We can mock it for the test.
+            const mockAddCreatedItem = () => { console.log('Mock addCreatedItem called during test.'); };
+            await agentOrchestrator.createCampaign('A test campaign about a lone wolf trader', mockAddCreatedItem);
+            updateLastLog('success', 'Successfully orchestrated campaign creation.');
+        } catch (e) {
+            updateLastLog('failure', e instanceof Error ? e.message : String(e));
+        }
+        await sleep(500);
+
+        // Test 5: Self-Correction Loop
         const selfCorrectionLogId = Date.now();
         addLog('Running: Agent Self-Correction Test', 'running');
         const failingPrompt = "Generate a character but with a bio that is an unescaped quote like this: \"I am a bug\". This will fail JSON parsing.";

@@ -1,13 +1,23 @@
 import React from 'react';
 import { AvatarStudio } from './AvatarStudio';
 import { VizLabTool } from '../types';
-import { GradientIcon, AnimationIcon, TextStreamIcon, FadeIcon, PulseIcon, CharacterIcon, StylerIcon } from './Icons';
+import { GradientIcon, AnimationIcon, TextStreamIcon, FadeIcon, PulseIcon, CharacterIcon, StylerIcon, GlitchIcon, HoloCardIcon, MarketPulseIcon, GridIcon, NeonButtonIcon, ScanlinesIcon, TerminalIcon, LoaderBarIcon, ParallaxIcon, DataNodesIcon } from './Icons';
 import { GradientDepthSample } from './vizlab/GradientDepthSample';
 import { PopAnimationSample } from './vizlab/PopAnimationSample';
 import { StreamingTextSample } from './vizlab/StreamingTextSample';
 import { FadeEffectsSample } from './vizlab/FadeEffectsSample';
 import { PulsingLightsSample } from './vizlab/PulsingLightsSample';
 import { ThemeStudioSample } from './vizlab/ThemeStudioSample';
+import { DataGlitchSample } from './vizlab/DataGlitchSample';
+import { HoloCardSample } from './vizlab/HoloCardSample';
+import { MarketPulseSample } from './vizlab/MarketPulseSample';
+import { ChartGridSample } from './vizlab/ChartGridSample';
+import { NeonButtonSample } from './vizlab/NeonButtonSample';
+import { ScanlineSample } from './vizlab/ScanlineSample';
+import { TerminalLoggerSample } from './vizlab/TerminalLoggerSample';
+import { LoadersSample } from './vizlab/LoadersSample';
+import { ParallaxHoverSample } from './vizlab/ParallaxHoverSample';
+import { DataNodesSample } from './vizlab/DataNodesSample';
 
 interface VizLabViewProps {
     tool: VizLabTool;
@@ -43,6 +53,16 @@ const toolConfig = {
     streamingText: { label: 'Streaming Text', icon: <TextStreamIcon />, component: <StreamingTextSample /> },
     fadeEffects: { label: 'Fade Effects', icon: <FadeIcon />, component: <FadeEffectsSample /> },
     pulsingLights: { label: 'Pulsing Lights', icon: <PulseIcon />, component: <PulsingLightsSample /> },
+    dataGlitch: { label: 'Data Glitch', icon: <GlitchIcon />, component: <DataGlitchSample /> },
+    holoCard: { label: 'Holographic Card', icon: <HoloCardIcon />, component: <HoloCardSample /> },
+    marketPulse: { label: 'Market Pulse', icon: <MarketPulseIcon />, component: <MarketPulseSample /> },
+    chartGrid: { label: 'Chart Grid', icon: <GridIcon />, component: <ChartGridSample /> },
+    neonButton: { label: 'Neon Buttons', icon: <NeonButtonIcon />, component: <NeonButtonSample /> },
+    scanline: { label: 'Scanline Overlay', icon: <ScanlinesIcon />, component: <ScanlineSample /> },
+    terminalLogger: { label: 'Terminal Logger', icon: <TerminalIcon />, component: <TerminalLoggerSample /> },
+    loaders: { label: 'Loaders', icon: <LoaderBarIcon />, component: <LoadersSample /> },
+    parallaxHover: { label: 'Parallax Hover', icon: <ParallaxIcon />, component: <ParallaxHoverSample /> },
+    dataNodes: { label: 'Data Nodes', icon: <DataNodesIcon />, component: <DataNodesSample /> },
 };
 
 export const VizLabView: React.FC<VizLabViewProps> = ({ tool, setTool }) => {
@@ -52,7 +72,7 @@ export const VizLabView: React.FC<VizLabViewProps> = ({ tool, setTool }) => {
 
     return (
         <div className="view-container flex h-full max-h-[calc(100vh-65px)]">
-            <aside className="w-64 bg-gray-800/50 border-r border-gray-700 p-4 flex-shrink-0">
+            <aside className="w-64 bg-gray-800/50 border-r border-gray-700 p-4 flex-shrink-0 overflow-y-auto">
                 <h2 className="text-lg font-bold text-white mb-4 px-2">VizLab Tools</h2>
                 <nav className="space-y-2">
                     {Object.entries(toolConfig).map(([key, { label, icon }]) => (

@@ -29,8 +29,27 @@ export const HubView: React.FC<HubViewProps> = ({ onNavigate }) => {
         return <div className="flex items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Loading Profile...</span></div>;
     }
 
+    const hasBonsai = profile.inventory.includes('item1');
+
     return (
-        <div className="p-8 max-w-4xl mx-auto">
+        <div className="p-8 max-w-4xl mx-auto relative">
+            {hasBonsai && (
+                <div className="absolute top-10 right-[-100px] text-green-400 opacity-80" title="Your Neon Bonsai">
+                    <pre className="text-xs leading-tight">
+                        {`
+      ,d88b.d88b,
+      88888888888
+      \`Y8888888Y'
+        \`Y888Y'
+          Y8Y
+          |'|
+         / | \\
+        "  |  "
+        \`--'--'
+                        `}
+                    </pre>
+                </div>
+            )}
             <header className="flex justify-between items-center mb-10">
                 <div>
                     <h1 className="text-4xl font-bold tracking-tight text-white">Welcome, {profile.handle}</h1>

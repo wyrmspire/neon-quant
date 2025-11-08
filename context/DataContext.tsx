@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { mockApi } from '../services/mockApi';
-import { AppData, CreationType, DataContextType, Episode, Strategy, AiCharacter, Item, Drill, VisualAsset, AssetType } from '../types';
+import { AppData, CreationType, DataContextType, Episode, Strategy, AiCharacter, Item, Drill, VisualAsset, AssetType, Campaign } from '../types';
 
 const defaultState: AppData = {
     profile: null,
@@ -12,6 +12,7 @@ const defaultState: AppData = {
     visualAssets: [],
     themes: [],
     agentLessons: [],
+    campaigns: [],
 };
 
 export const DataContext = createContext<DataContextType>({
@@ -21,6 +22,7 @@ export const DataContext = createContext<DataContextType>({
     purchaseItem: async () => ({success: false}),
     grantEpisodeReward: async () => {},
     addCreatedItem: () => {},
+    updateCampaign: () => {},
 });
 
 export const useData = () => useContext(DataContext);
@@ -33,7 +35,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(true);
         try {
             const [
-                profile, episodes, characters, strategies, items, drills, visualAssets, themes, agentLessons
+                profile, episodes, characters, strategies, items, drills, visualAssets, themes, agentLessons, campaigns
             ] = await Promise.all([
                 mockApi.getProfile(),
                 mockApi.getEpisodes(),
@@ -41,11 +43,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 mockApi.getStrategies(),
                 mockApi.getStoreItems(),
                 mockApi.getDrills(),
-                mockApi.getVisualAssets('avatar'), // Assuming only avatar for now
+                mockApi.getVisualAssets(), // Fetch all visual assets
                 mockApi.getThemes(),
                 mockApi.getAgentLessons(),
+                mockApi.getCampaigns(),
             ]);
-            setAppData({ profile, episodes, characters, strategies, items, drills, visualAssets, themes, agentLessons });
+            setAppData({ profile, episodes, characters, strategies, items, drills, visualAssets, themes, agentLessons, campaigns });
         } catch (error) {
             console.error("Failed to fetch initial app data:", error);
         } finally {
@@ -90,7 +93,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             case 'visualAsset':
                 setAppData(prev => ({ ...prev, visualAssets: [...prev.visualAssets, item as VisualAsset] }));
                 break;
+            case 'campaign':
+                setAppData(prev => ({ ...prev, campaigns: [...prev.campaigns, item as Campaign] }));
+                break;
         }
+    }, []);
+    
+    const updateCampaign = useCallback((campaign: Campaign) => {
+        setAppData(prev => ({
+            ...prev,
+            campaigns: prev.campaigns.map(c => c.id === campaign.id ? campaign : c)
+        }));
     }, []);
 
     const value = useMemo(() => ({
@@ -100,7 +113,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         purchaseItem,
         grantEpisodeReward,
         addCreatedItem,
-    }), [appData, isLoading, fetchData, purchaseItem, grantEpisodeReward, addCreatedItem]);
+        updateCampaign,
+    }), [appData, isLoading, fetchData, purchaseItem, grantEpisodeReward, addCreatedItem, updateCampaign]);
 
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };

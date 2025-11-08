@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GameScreen, Episode, Session, CoachFeedback } from '../types';
+import { GameScreen, Episode, Session, Drill } from '../types';
 import { HubView } from './HubView';
 import { EpisodeSelectScreen } from './EpisodeSelectScreen';
 import { TradingArena } from './trading/TradingArena';
@@ -8,9 +8,6 @@ import { ContactsScreen } from './ContactsScreen';
 import { DojoScreen } from './DojoScreen';
 import { DebriefScreen } from './DebriefScreen';
 import { StrategyPlaybookScreen } from './StrategyPlaybookScreen';
-import { mockApi } from '../services/mockApi';
-import { geminiService } from '../services/geminiService';
-import { LoadingIcon } from './Icons';
 import { useData } from '../context/DataContext';
 
 interface GameViewProps {
@@ -20,46 +17,44 @@ interface GameViewProps {
 
 export const GameView: React.FC<GameViewProps> = ({ screen, setScreen }) => {
     const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
-    const [lastSession, setLastSession] = useState<Session | null>(null);
-    const [lastFeedback, setLastFeedback] = useState<CoachFeedback | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
+    const [debriefData, setDebriefData] = useState<{ session: Session; episode: Episode } | null>(null);
     const { grantEpisodeReward } = useData();
 
     const handleEpisodeSelect = (episode: Episode) => {
         setSelectedEpisode(episode);
+        setSelectedDrill(null); // Ensure no drill is selected
         setScreen('trading');
     };
+    
+    const handleDrillSelect = (drill: Drill) => {
+        setSelectedDrill(drill);
+        setSelectedEpisode(null); // Ensure no episode is selected
+        setScreen('trading');
+    }
 
-    const handleEpisodeComplete = async (session: Session) => {
-        if (!selectedEpisode) return;
-
-        setIsLoading(true);
-        setLastSession(session);
-        
-        try {
-            // 1. Generate feedback from AI Coach
-            const feedbackData = await geminiService.generateCoachFeedback(session, selectedEpisode);
-            const savedFeedback = await mockApi.saveCoachFeedback(feedbackData);
-            setLastFeedback(savedFeedback);
-            
-            // 2. Grant reward via context
+    const handleSessionComplete = async (session: Session) => {
+        // Only grant rewards for episodes, not drills
+        if (selectedEpisode) {
             await grantEpisodeReward(selectedEpisode.reward);
-        } catch (error) {
-            console.error("Failed during episode completion:", error);
-            // Handle error state if necessary
-        } finally {
-            // 3. Navigate to debrief
-            setSelectedEpisode(null);
-            setIsLoading(false);
+            setDebriefData({ session, episode: selectedEpisode });
             setScreen('debrief');
+        } else {
+            // For drills, just go back to the hub or dojo screen
+            setScreen('dojo');
         }
+        
+        // Clear selections for the next run
+        setSelectedEpisode(null);
+        setSelectedDrill(null);
+    };
+
+    const handleAcknowledgeDebrief = () => {
+        setDebriefData(null);
+        setScreen('hub');
     };
 
     const renderScreen = () => {
-        if(isLoading) {
-             return <div className="flex flex-col items-center justify-center h-full text-cyan-400"><LoadingIcon size={12} /> <span className="ml-4 text-xl">Generating AI Coach Debrief...</span></div>;
-        }
-
         switch (screen) {
             case 'hub':
                 return <HubView onNavigate={setScreen} />;
@@ -69,19 +64,22 @@ export const GameView: React.FC<GameViewProps> = ({ screen, setScreen }) => {
                 return <StrategyPlaybookScreen onNavigate={setScreen} />;
             case 'trading':
                 if (selectedEpisode) {
-                    return <TradingArena episode={selectedEpisode} onComplete={handleEpisodeComplete} />;
+                    return <TradingArena episode={selectedEpisode} onComplete={handleSessionComplete} />;
                 }
-                setScreen('hub'); // Fallback if no episode is selected
+                if (selectedDrill) {
+                    return <TradingArena drill={selectedDrill} onComplete={handleSessionComplete} />;
+                }
+                setScreen('hub'); // Fallback if nothing is selected
                 return null;
             case 'market':
                 return <MarketScreen onNavigate={setScreen} />;
             case 'contacts':
                 return <ContactsScreen onNavigate={setScreen} />;
             case 'dojo':
-                return <DojoScreen onNavigate={setScreen} />;
+                return <DojoScreen onNavigate={setScreen} onSelectDrill={handleDrillSelect} />;
             case 'debrief':
-                if(lastSession && lastFeedback) {
-                     return <DebriefScreen session={lastSession} feedback={lastFeedback} onAcknowledge={() => setScreen('hub')} />;
+                if (debriefData) {
+                     return <DebriefScreen session={debriefData.session} episode={debriefData.episode} onAcknowledge={handleAcknowledgeDebrief} />;
                 }
                  setScreen('hub'); // Fallback if debrief data is missing
                  return null;

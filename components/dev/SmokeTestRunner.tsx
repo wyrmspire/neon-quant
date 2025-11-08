@@ -4,6 +4,7 @@ import { LoadingIcon, CheckCircleIcon } from '../Icons';
 
 // This is the sequence of screens the test will navigate through.
 const TEST_SEQUENCE: { mode: AppMode; screen?: GameScreen; tool?: VizLabTool }[] = [
+    { mode: 'campaign' },
     { mode: 'agent' },
     { mode: 'game', screen: 'hub' },
     { mode: 'game', screen: 'episodeSelect' },
@@ -19,6 +20,16 @@ const TEST_SEQUENCE: { mode: AppMode; screen?: GameScreen; tool?: VizLabTool }[]
     { mode: 'vizlab', tool: 'streamingText' },
     { mode: 'vizlab', tool: 'fadeEffects' },
     { mode: 'vizlab', tool: 'pulsingLights' },
+    { mode: 'vizlab', tool: 'dataGlitch' },
+    { mode: 'vizlab', tool: 'holoCard' },
+    { mode: 'vizlab', tool: 'marketPulse' },
+    { mode: 'vizlab', tool: 'chartGrid' },
+    { mode: 'vizlab', tool: 'neonButton' },
+    { mode: 'vizlab', tool: 'scanline' },
+    { mode: 'vizlab', tool: 'terminalLogger' },
+    { mode: 'vizlab', tool: 'loaders' },
+    { mode: 'vizlab', tool: 'parallaxHover' },
+    { mode: 'vizlab', tool: 'dataNodes' },
 ];
 
 const TEST_DELAY_MS = 750;

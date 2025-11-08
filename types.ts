@@ -1,16 +1,47 @@
-export type AppMode = 'agent' | 'game' | 'vizlab';
+// =================================================================
+// CORE APP STATE & NAVIGATION
+// =================================================================
 
-export type GameScreen = 'hub' | 'episodeSelect' | 'market' | 'contacts' | 'trading' | 'dojo' | 'debrief' | 'strategybook';
+export type AppMode = 'campaign' | 'agent' | 'game' | 'vizlab';
 
-export type VizLabTool = 'avatarStudio' | 'gradientDepth' | 'popAnimation' | 'streamingText' | 'fadeEffects' | 'pulsingLights' | 'themeStudio';
+export type GameScreen = 'hub' | 'episodeSelect' | 'strategybook' | 'trading' | 'market' | 'contacts' | 'dojo' | 'debrief';
 
-export type Regime = "trend" | "range" | "news" | "volcrush";
+export type VizLabTool =
+  | 'avatarStudio'
+  | 'themeStudio'
+  | 'gradientDepth'
+  | 'popAnimation'
+  | 'streamingText'
+  | 'fadeEffects'
+  | 'pulsingLights'
+  | 'dataGlitch'
+  | 'holoCard'
+  | 'marketPulse'
+  | 'chartGrid'
+  | 'neonButton'
+  | 'scanline'
+  | 'terminalLogger'
+  | 'loaders'
+  | 'parallaxHover'
+  | 'dataNodes';
+
+export interface AppStateSetters {
+    setMode: (mode: AppMode) => void;
+    setGameScreen: (screen: GameScreen) => void;
+    setVizLabTool: (tool: VizLabTool) => void;
+}
+
+// =================================================================
+// GAME CONTENT & PLAYER DATA
+// =================================================================
+
+export type MarketRegime = "trend" | "range" | "news" | "volcrush";
 
 export interface Episode {
     id: string;
     title: string;
     description: string;
-    regime: Regime;
+    regime: MarketRegime;
     seed: string;
     objectives: string[];
     imageUrl: string;
@@ -22,8 +53,8 @@ export interface AiCharacter {
     id: string;
     name: string;
     personality: string;
-    imageUrl: string;
     bio: string;
+    imageUrl: string;
     suggestedThemeId?: string;
 }
 
@@ -40,10 +71,10 @@ export interface Profile {
 }
 
 export interface Strategy {
-    id:string;
+    id: string;
     name: string;
     description: string;
-    regime: Regime;
+    regime: MarketRegime;
     entryConditions: string[];
     exitConditions: string[];
     riskManagement: string[];
@@ -59,44 +90,33 @@ export interface Item {
     suggestedThemeId?: string;
 }
 
-export interface SuccessCriteria {
-    metric: string;
-    op: 'lt' | 'gt';
-    value: number;
-    label: string;
-}
-
 export interface Drill {
     id: string;
     name: string;
     description: string;
     detectionRule: string;
     scenarioSeed: string;
-    successCriteria: SuccessCriteria;
+    successCriteria: {
+        metric: string;
+        op: 'lt' | 'gt';
+        value: number;
+        label: string;
+    };
     suggestedThemeId?: string;
 }
 
-export interface AgentLog {
-    type: 'user' | 'agent' | 'system' | 'error';
-    message: string;
-    data?: any;
-}
-
-export type CreationType = 'chat' | 'episode' | 'strategy' | 'character' | 'item' | 'drill' | 'visualAsset';
-
-// For Trading Arena state
 export interface Trade {
     entryPrice: number;
-    exitPrice?: number;
     direction: 'long' | 'short';
     size: number;
     entryTime: number;
+    exitPrice?: number;
     exitTime?: number;
     pnl?: number;
 }
 
 export interface Session {
-    episodeId: string;
+    episodeId: string; // Could also be a drillId
     closedTrades: Trade[];
     finalPnl: number;
 }
@@ -109,16 +129,26 @@ export interface CoachFeedback {
     assignedDrillId?: string;
 }
 
-export interface VisualAsset {
+export interface JournalEntry {
     id: string;
-    type: 'avatar' | 'vfx' | 'gradient';
-    name: string;
-    prompt: string;
-    dataUrl: string; // base64 data URL
+    timestamp: string;
+    drillId: string;
+    pnl: number;
+    score: number;
+    notes: string;
+    ruleHits: Record<string, number>;
 }
 
-export interface ComponentStyle {
-    classes: string;
+// =================================================================
+// AGENT & VIZLAB TYPES
+// =================================================================
+
+export interface VisualAsset {
+    id: string;
+    name: string;
+    type: 'avatar' | 'background' | 'ui_element';
+    prompt: string;
+    dataUrl: string;
 }
 
 export interface Theme {
@@ -126,19 +156,9 @@ export interface Theme {
     name: string;
     description: string;
     styles: {
-        button: ComponentStyle,
-        card: ComponentStyle,
-    }
-}
-
-export interface JournalEntry {
-    id: string;
-    drillId: string;
-    timestamp: string;
-    pnl: number;
-    score: number;
-    notes: string;
-    ruleHits: Record<string, number>;
+        button: { classes: string };
+        card: { classes: string };
+    };
 }
 
 export interface AgentLesson {
@@ -147,7 +167,49 @@ export interface AgentLesson {
     correction: string;
 }
 
-// Data Context Types
+export type AgentAction = 'thinking' | 'generating_data' | 'generating_image' | 'saving_to_db' | 'responding';
+
+export interface AgentLog {
+    type: 'user' | 'agent' | 'system' | 'error';
+    message: string;
+    data?: any;
+    action?: AgentAction; // For multi-step agent actions
+}
+
+export type CreationType = 'chat' | 'episode' | 'strategy' | 'character' | 'item' | 'drill' | 'visualAsset' | 'campaign' | 'storyNode';
+
+// =================================================================
+// CAMPAIGN & STORY GRAPH
+// =================================================================
+
+export interface CampaignNode {
+    id: string;
+    type: 'story' | 'episode' | 'drill' | 'choice';
+    title: string;
+    content: string;
+    position: { x: number; y: number };
+    visualAssetId?: string;
+}
+
+export interface CampaignLink {
+    id: string;
+    sourceId: string;
+    targetId: string;
+}
+
+export interface Campaign {
+    id: string;
+    title: string;
+    description: string;
+    nodes: CampaignNode[];
+    links: CampaignLink[];
+}
+
+
+// =================================================================
+// DATA CONTEXT
+// =================================================================
+
 export interface AppData {
     profile: Profile | null;
     episodes: Episode[];
@@ -158,9 +220,10 @@ export interface AppData {
     visualAssets: VisualAsset[];
     themes: Theme[];
     agentLessons: AgentLesson[];
+    campaigns: Campaign[];
 }
 
-export type AssetType = Episode | Strategy | AiCharacter | Item | Drill | VisualAsset;
+export type AssetType = Episode | Strategy | AiCharacter | Item | Drill | VisualAsset | Campaign;
 
 export interface DataContextType extends AppData {
     isLoading: boolean;
@@ -168,10 +231,5 @@ export interface DataContextType extends AppData {
     purchaseItem: (itemId: string) => Promise<{success: boolean}>;
     grantEpisodeReward: (reward: number) => Promise<void>;
     addCreatedItem: <T extends AssetType>(item: T, type: CreationType) => void;
-}
-
-export interface AppStateSetters {
-    setMode: (mode: AppMode) => void;
-    setGameScreen: (screen: GameScreen) => void;
-    setVizLabTool: (tool: VizLabTool) => void;
+    updateCampaign: (campaign: Campaign) => void;
 }

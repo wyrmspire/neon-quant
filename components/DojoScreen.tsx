@@ -1,13 +1,14 @@
 import React from 'react';
-import { GameScreen } from '../types';
+import { GameScreen, Drill } from '../types';
 import { ArrowLeftIcon, LoadingIcon } from './Icons';
 import { useData } from '../context/DataContext';
 
 interface DojoScreenProps {
     onNavigate: (screen: GameScreen) => void;
+    onSelectDrill: (drill: Drill) => void;
 }
 
-export const DojoScreen: React.FC<DojoScreenProps> = ({ onNavigate }) => {
+export const DojoScreen: React.FC<DojoScreenProps> = ({ onNavigate, onSelectDrill }) => {
     const { drills, isLoading } = useData();
 
     if (isLoading) {
@@ -40,11 +41,10 @@ export const DojoScreen: React.FC<DojoScreenProps> = ({ onNavigate }) => {
                             </div>
                         </div>
                         <button
-                            // onClick={() => handleStartDrill(drill)} // Not implemented
-                            disabled
-                            className="w-full mt-4 py-2 font-semibold bg-cyan-500 text-gray-900 rounded-md hover:bg-cyan-400 transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                            onClick={() => onSelectDrill(drill)}
+                            className="w-full mt-4 py-2 font-semibold bg-cyan-500 text-gray-900 rounded-md hover:bg-cyan-400 transition-colors"
                         >
-                            Start Drill (WIP)
+                            Start Drill
                         </button>
                     </div>
                 ))}
